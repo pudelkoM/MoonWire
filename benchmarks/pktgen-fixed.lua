@@ -29,6 +29,7 @@ function configure(parser)
         parser:option("-t --threads", "Number of threads per device."):args(1):convert(tonumber):default(1)
         parser:option("-r --rate", "Transmit rate in Mbit/s per device."):args(1)
         parser:option("-w --webserver", "Start a REST API on the given port."):convert(tonumber)
+        parser:option("--size", "Size of the send packets"):convert(tonumber):default(60)
         parser:option("-o --output", "File to output statistics to")
         parser:option("-s --seconds", "Stop after n seconds")
         parser:flag("-a --arp", "Use ARP.")
@@ -39,6 +40,8 @@ end
 function master(args,...)
         log:info("Check out MoonGen (built on lm) if you are looking for a fully featured packet generator")
         log:info("https://github.com/emmericp/MoonGen")
+
+        PKT_LEN = args.size
 
         -- configure devices and queues
         local arpQueues = {}
