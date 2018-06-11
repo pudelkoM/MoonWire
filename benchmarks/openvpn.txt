@@ -1,0 +1,52 @@
+
+# omanyte
+
+#
+# 2048 bit OpenVPN static key
+#
+-----BEGIN OpenVPN Static key V1-----
+69fb86b7243dc8ce3d6647d3dcbc1026
+0d4ec287cbe79e47b3c749e322d7ec91
+b814df8601ec9671c95b25956f835cc4
+3e4ed276c412e37a04ba390d78b21649
+bddf4359e73cc19673dca69b155d449d
+582098089a53686cafbca1d9995cd045
+8c4cdb09f256a823b07d7240a8bf733a
+92ce2b713363e4abe697dcc137585cca
+00814553b7b1fd32cf53b6aefe86c49d
+f09066d74cdf000045c5a5e7ded895d5
+9caf38315a6c16f6a2ba0c31120d4ef4
+908a19872f91802f1090e4fdb7b60b22
+4f32abaf01c355e80eee3ac37e88cabd
+45a78b245c32403b0b1969676ae43704
+1bc9b5177a586d98a88bf524c132703b
+917c137f3ba14dbb43454144d0f39287
+-----END OpenVPN Static key V1-----
+
+## config  - /etc/openvpn/omanyte.conf
+proto udp
+remote 10.0.1.1
+dev tun
+ifconfig 192.168.0.2 192.168.0.1
+route 10.0.2.0 255.255.255.0
+secret static.key
+cipher AES-256-CBC
+verb 3
+
+openvpn omanyte.conf
+
+# omastar
+
+## config
+local 10.0.1.1
+dev tun
+ifconfig 192.168.0.1 192.168.0.2
+route 10.0.0.0 255.255.255.0
+secret static.key
+
+openvpn omastar.conf
+
+
+## Perf
+# 0.14 Mpps - 70 Mbit/s - 64 byte packets
+# 0.06 Mpps - 716 Mbit/s - 1400 byte

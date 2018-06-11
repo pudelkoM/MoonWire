@@ -1,0 +1,53 @@
+# omastar - VPN encrypter
+
+apt-get install linux-tools-4.4.0-109-generic
+
+ip a add 10.0.2.1/24 dev ens3f1
+ip a add 10.0.1.1/24 dev ens4f0
+sysctl -w net.ipv4.ip_forward=1
+
+ip xfrm state add src 10.0.1.2 dst 10.0.1.1 proto esp spi 0xdeadbeef mode tunnel aead "rfc4106(gcm(aes))" 0x77777777deadbeef77777777DEADBEEFff0000ff 128
+ip xfrm policy add src 10.0.0.0/24 dst 10.0.2.0/24 dir fwd tmpl src 10.0.1.2 dst 10.0.1.1 proto esp mode tunnel 
+
+arp -s 10.0.2.2 3C:FD:FE:9E:D7:41
+
+./build/libmoon examples/my-pktgen.lua 0 5
+
+
+
+# omanyte
+
+ip a add 10.0.1.2/24 dev ens1f0
+ip a add 10.0.0.2/24 dev enp2s0f0
+# Maybe add route? Seems like no
+sysctl -w net.ipv4.ip_forward=1
+
+ip xfrm state add src 10.0.1.2 dst 10.0.1.1 proto esp spi 0xdeadbeef mode tunnel aead "rfc4106(gcm(aes))" 0x77777777deadbeef77777777DEADBEEFff0000ff 128
+ip xfrm policy add src 10.0.0.0/24 dst 10.0.2.0/24 dir out tmpl src 10.0.1.2 dst 10.0.1.1 proto esp mode tunnel 
+
+
+## 2.45 Mpps, 12 cores, 100%
+
+## End-to-End: 0.64 Mpps
+
+# perf stat -d -a -- sleep 60
+
+ Performance counter stats for 'system wide':
+
+     720116.852984      task-clock (msec)         #   12.001 CPUs utilized            (100.00%)
+             5,056      context-switches          #    0.007 K/sec                    (100.00%)
+                 7      cpu-migrations            #    0.000 K/sec                    (100.00%)
+                92      page-faults               #    0.000 K/sec                  
+ 1,865,710,48    instructions              #    0.93  insns per cycle          (62.50%)
+   246,750,954,875      branches                  #  342.654 M/sec                    (62.50%)
+     2,979,580,393      branch-4,578      cycles                    #    2.591 GHz                      (50.00%)
+   <not supported>      stalled-cycles-frontend  
+   <not supported>      stalled-cycles-backend   
+ 1,736,772,307,436  misses             #    1.21% of all branches          (62.50%)
+   541,233,055,360      L1-dcache-loads           #  751.591 M/sec                    (41.15%)
+    28,707,531,666      L1-dcache-load-misses     #    5.30% of all L1-dcache hits    (30.02%)
+     3,843,967,564      LLC-loads                 #    5.338 M/sec                    (25.00%)
+       511,811,439      LLC-load-misses           #   13.31% of all LL-cache hits     (37.49%)
+
+      60.006357189 seconds time elapsed
+
