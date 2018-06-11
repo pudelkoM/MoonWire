@@ -92,7 +92,7 @@ function master(args,...)
                         if args.rate then
                                 queue:setRate(args.rate / args.threads)
                         end
-                        lm.startTask("txSlave", queue, DST_MAC)
+                        lm.startTask("txSlave", queue, DST_MAC, PKT_LEN)
                 end
         end
 
@@ -103,7 +103,7 @@ function master(args,...)
         lm.waitForTasks()
 end
 
-function txSlave(queue, dstMac)
+function txSlave(queue, dstMac, pktLen)
         -- memory pool with default values for all packets, this is our archetype
         local mempool = memory.createMemPool(function(buf)
                 buf:getUdpPacket():fill{
@@ -114,7 +114,7 @@ function txSlave(queue, dstMac)
                         ip4Dst = DST_IP,
                         udpSrc = SRC_PORT,
                         udpDst = DST_PORT,
-                        pktLength = PKT_LEN
+                        pktLength = pktLen
                 }
         end)
         -- a bufArray is just a list of buffers from a mempool that is processed as a single batch
@@ -122,7 +122,7 @@ function txSlave(queue, dstMac)
         while lm.running() do -- check if Ctrl+c was pressed
                 -- this actually allocates some buffers from the mempool the array is associated with
                 -- this has to be repeated for each send because sending is asynchronous, we cannot reuse the old buffers here
-                bufs:alloc(PKT_LEN)
+                bufs:alloc(pktLen)
                 for i, buf in ipairs(bufs) do
                         -- packet framework allows simple access to fields in complex protocol stacks
                         local pkt = buf:getUdpPacket()
