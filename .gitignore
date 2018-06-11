@@ -1,0 +1,9 @@
+.*.sw[o-z]
+*.aux
+*.blg
+*.out
+*.log
+*.synctex.gz
+*.bbl
+paper.pdf
+.DS_Store
