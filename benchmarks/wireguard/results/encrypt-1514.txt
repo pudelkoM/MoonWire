@@ -2,7 +2,7 @@
 # ../pktgen-fixed.lua, ./netpps.sh ens1f0 10, perf stat -d -a -- sleep 60
 # offered load [Mpps], offered load [Mbit/s], VPN encryption forwarding rate [Mpps], system-wide CPU load on VPN encrypter [GHz], e2e rate [Mpps]
 
-0.086, 1041, 0.86, 0.334, 0.086
+0.086, 1041, 0.086, 0.334, 0.086
 0.172, 2082, 0.172, 0.585, 0.172
 0.25, 3018, 0.249, 0.767, 0.25
 0.33, 3955, 0.327, 0.949, 0.28
