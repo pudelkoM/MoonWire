@@ -124,8 +124,10 @@ function txSlave(queue, dstMac)
                 for i, buf in ipairs(bufs) do
                         -- packet framework allows simple access to fields in complex protocol stacks
                         local pkt = buf:getUdpPacket()
+                        local size = dist.LRZDist()
                         pkt.udp:setSrcPort(SRC_PORT_BASE + math.random(0, NUM_FLOWS - 1))
-                        pkt:setLength(dist.LRZDist())
+                        pkt:setLength(size)
+                        buf:setSize(size)
                 end
                 -- UDP checksums are optional, so using just IPv4 checksums would be sufficient here
                 -- UDP checksum offloading is comparatively slow: NICs typically do not support calculating the pseudo-header checksum so this is done in SW
