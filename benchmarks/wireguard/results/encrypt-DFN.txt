@@ -1,16 +1,16 @@
 # WireGuard 0.0.20180531, DFN packet size distribution, Linux 4.4.0-78-generic, Intel(R) Xeon(R) CPU E5-2620 v3 @ 2.40GHz
 # ../pktgen-DFN.lua, ./netpps.sh ens1f0 10, perf stat -d -a -- sleep 60
-# offered load [Mpps], offered load [Mbit/s], VPN encryption forwarding rate [Mpps], system-wide CPU load on VPN encrypter [GHz], e2e rate [Mpps]
+# offered load [Mpps], offered load [Mbit/s], VPN encryption forwarding rate [Mpps], system-wide CPU load on VPN encrypter [GHz], e2e rate [Mpps], cycles per packet
 
 
-0.14, 1036, 0.140, 0.463, 0.14
-0.28, 2073, 0.280, 0.784, 0.28
-0.42, 3109, 0.420, 1.061 , 0.38
-0.56, 4145, 0.561, 1.329, 0.38
-0.59, 4351, 0.588, 1.381, 0.38
-0.62, 4600, 0.550, 1.381, 0.35
-0.84, 6218, 0.222, 1.593, 0.18
-0.98, 7254, 0.327, 1.831, 0.04
-1.12, 8290, 0.00, 1.864, 0.00
-1.40, 10362, 0.00, 1.997, 0.00
-1.82, 13452, 0.00, 2.212, 0.00
+0.14, 1036, 0.140, 0.463, 0.14, 3307
+0.28, 2073, 0.280, 0.784, 0.28, 2800
+0.42, 3109, 0.420, 1.061 , 0.38, 2639
+0.56, 4145, 0.561, 1.329, 0.38, 2369
+0.59, 4351, 0.588, 1.381, 0.38, 2348
+0.62, 4600, 0.550, 1.381, 0.35, 2511
+0.84, 6218, 0.222, 1.593, 0.18, 7241
+0.98, 7254, 0.327, 1.831, 0.04, 5599
+1.12, 8290, 0.00, 1.864, 0.00, inf
+1.40, 10362, 0.00, 1.997, 0.00, inf
+1.82, 13452, 0.00, 2.212, 0.00, inf

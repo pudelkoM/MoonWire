@@ -1,0 +1,47 @@
+\documentclass[border=0pt]{standalone}
+
+\usepackage{tumcolors}
+\usepackage{pgfplots}
+\pgfplotsset{compat=newest}
+\pgfplotsset{grid style={dotted}}
+\usetikzlibrary{plotmarks}
+
+\begin{document}
+
+\pgfplotsset{compat=newest}
+\pgfplotsset{grid style={dotted}}
+\tikzset{every mark/.append style={scale=0.9}}
+\pgfplotsset{scaled y ticks=false}
+\begin{tikzpicture}
+
+\begin{axis}[
+	%axis y line*=right,
+	%axis x line=none,
+	ylabel={Cycles per Packet},
+	footnotesize,
+	scale only axis,
+	width=7cm,
+	height=3cm,
+	grid=major,
+    xmin=0,
+	xmax=1.5,
+	%ymin=0,
+    ymax=8000,
+	%symbolic x coords={1 K, 10 K, 100 K, 1 M, 10 M},
+	%ytick=data,
+    %ytick distance = 0.5,
+    xtick distance = 0.25,
+	xlabel={Offered Load [Mpps]},
+	every axis legend/.append style={nodes={right}},
+	legend entries={64 byte, DFN, 1514 byte},
+	legend style={at={(0.01,0.99)},anchor=north west, font=\footnotesize},
+	every axis legend/.append style={nodes={right}}
+]
+\addplot[mark=square*,color=TUMBlue] table[col sep=comma, x index = {0}, y index = {4}] {encrypt-64.txt};
+\addplot[mark=square*,color=TUMOrange] table[col sep=comma, x index = {0}, y index = {5}] {encrypt-DFN.txt};
+\addplot[mark=square*,color=TUMGreen] table[col sep=comma, x index = {0}, y index = {5}] {encrypt-1514.txt};
+%\draw[dashed, line width=0.2mm] (0,2.4) -- (10,2.4);
+\end{axis}
+
+\end{tikzpicture}
+\end{document}
