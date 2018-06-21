@@ -15,3 +15,8 @@
 	url = https://github.com/jedisct1/libsodium
 	ignore = untracked
 	branch = stable
+	shallow = true
+[submodule "libmoon"]
+	path = libmoon
+	url = https://github.com/libmoon/libmoon.git
+	shallow = true
