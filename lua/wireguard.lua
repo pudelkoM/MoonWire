@@ -12,7 +12,7 @@ local jit = require "jit"
 jit.opt.start("maxrecord=20000", "maxirconst=20000", "loopunroll=4000")
 
 function configure(parser)
-    parser:argument("conf", "Path to wireguard configuration file")
+    -- parser:argument("conf", "Path to wireguard configuration file")
     parser:argument("gateway", "Device to configure as gateway"):convert(tonumber)
     parser:argument("tunnel", "Device to use as tunnel"):convert(tonumber)
     local args = parser:parse()
@@ -20,7 +20,7 @@ function configure(parser)
 end
 
 function master(args)
-    rxQueues = args.rxThreads = 1
+    args.rxThreads = 1
 
     args.gateway = device.config{
         port = args.gateway,
@@ -38,7 +38,7 @@ function master(args)
 
     stats.startStatsTask{devices = args.dev}
 
-    lm.startTask("slaveTaskEncrypt", gateway:getRxQueue(0), tunnel:getRxQueue(0))
+    lm.startTask("slaveTaskEncrypt", args.gateway:getRxQueue(0), args.tunnel:getTxQueue(0))
 
     lm.waitForTasks()
     log:info("[master]: Shutdown")
@@ -49,10 +49,18 @@ local function handshake()
 end
 
 function slaveTaskEncrypt(gwDevQueue, tunDevQueue)
+    if sodium.sodium_init() < 0 then
+        log:error("Setting up libsodium")
+        lm.stop()
+    end
+
     local bufs = memory.bufArray()
 	while lm.running() do
 		local rx = gwDevQueue:tryRecv(bufs, 1000)
 		for i = 1, rx do
+            local pkt = bufs[i]:getEthernetPacket()
+            print(pkt)
+            
 			-- -- swap MAC addresses
 			-- local pkt = bufs[i]:getEthernetPacket()
 			-- local tmp = pkt.eth:getDst()
