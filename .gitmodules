@@ -1,0 +1,17 @@
+[submodule "src/WireGuard"]
+	path = src/WireGuard
+	url = https://git.zx2c4.com/WireGuard
+[submodule "src/noise-c"]
+	path = src/noise-c
+	url = https://github.com/rweather/noise-c.git
+[submodule "src/BLAKE2"]
+	path = src/BLAKE2
+	url = https://github.com/BLAKE2/BLAKE2.git
+[submodule "src/libb2"]
+	path = src/libb2
+	url = https://github.com/BLAKE2/libb2.git
+[submodule "src/libsodium"]
+	path = src/libsodium
+	url = https://github.com/jedisct1/libsodium
+	ignore = untracked
+	branch = stable
