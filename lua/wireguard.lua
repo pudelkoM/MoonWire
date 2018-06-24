@@ -4,9 +4,11 @@ local lm = require "libmoon"
 local memory = require "memory"
 local log = require "log"
 local stats = require "stats"
+local ip4 = require "proto.ip4"
+local eth = require "proto.ethernet"
 local dpdk_export = require "missing-dpdk-stuff"
 
--- local msg = require "messages"
+local msg = require "messages"
 local sodium = require "sodium"
 
 local jit = require "jit"
@@ -56,6 +58,9 @@ local function handshake()
 end
 
 function slaveTaskEncrypt(gwDevQueue, tunDevQueue)
+    local srcPort, dstPort = 2000, 3000
+    local outerDstIP = ffi.new("union ip4_address"):setString("10.0.0.1")
+
     if sodium.sodium_init() < 0 then
         log:error("Setting up libsodium")
         lm.stop()
@@ -71,36 +76,64 @@ function slaveTaskEncrypt(gwDevQueue, tunDevQueue)
         local rx = gwDevQueue:tryRecv(bufs, 1000)
         for i = 1, rx do
             local buf = bufs[i]
-            
-            local headroom, tailroom = dpdk_export.rte_pktmbuf_headroom_export(buf), dpdk_export.rte_pktmbuf_tailroom_export(buf)
 
-            -- size checks
-            if headroom < 16 then
-                log:error("pktmbuf headroom of " .. headroom .. "to small for 16 byte header")
-                lm.stop()
-                return
+            -- debug: verbatim packet
+            -- buf:getIP4Packet():dump()
+
+            -- Check for IPv4, forward verbatim else
+            local ethPkt = buf:getEthPacket()
+            if ethPkt.eth:getType() ~= eth.TYPE_IP then
+                log:error("Received unsupported L3 type: " .. ethPkt.eth:getTypeString())
+                goto skip
             end
 
-            if tailroom < 8 then
-                log:error("pktmbuf tailroom of " .. tailroom .. "to small for " .. sodium.crypto_aead_chacha20poly1305_IETF_ABYTES .. " byte AEAD tag")
-                lm.stop()
-                return
-            end
+            -- save inner L3 packet size
+            local innerL3Len = buf:getSize() - 14
 
-            -- save real IP packet sizes and pointer
-            local pkt = buf:getBytes() + 14
-            local len = buf:getSize() - 14
+            -- mbuf layout transformation is as follows:
+            -- from:
+            -- | ethernet header | inner L3 packet |
+            -- to:
+            -- | new ethernet header | outer IP header | outer UDP header | WG data message header | encrypted L3 packet |
 
-            -- extend mbuf
+            -- extend mbuf tailroom for AEAD auth tag
             if dpdk_export.rte_pktmbuf_append_export(buf, sodium.crypto_aead_chacha20poly1305_IETF_ABYTES) == nil then
                 log:error("Could not extend tailroom")
                 lm.stop()
                 return
             end
 
+            -- extend headroom for WG data messsage header
+            local inc_headroom = ffi.sizeof("struct message_data") + 20 + 8 -- new IPv4 & UDP header
+            if dpdk_export.rte_pktmbuf_prepend_export(buf, inc_headroom) == nil then
+                log:error("Could not extend headroom")
+                lm.stop()
+                return
+            end
+
+            -- move ethernet + IPv4 header
+            ffi.copy(buf:getBytes(), buf:getBytes() + inc_headroom, 14 + 20)
+
+            -- create outer UDP header
+            local outerUdpPacket = buf:getUdp4Packet()
+            outerUdpPacket.udp:fill{
+                udpSrc = srcPort,
+                udpDst = dstPort,
+                udpLength = innerL3Len + sodium.crypto_aead_chacha20poly1305_IETF_ABYTES,
+                udpChecksum = 0x0 -- disable checksum since we have crypto authentication
+            }
+
+            -- create WG data message header
+            local msgData = ffi.cast("struct message_data*", buf:getBytes() + 14 + 20 + 8)
+            msgData.header.type = ffi.C.MESSAGE_DATA
+            msgData.key_idx = 1
+            msgData.counter = ffi.cast("uint64_t*", nonce)[0] -- high 8 bytes in little-endian
+            -- print(msgData)
+
+            local payload = buf:getBytes() + 14 + 20 + 8 + 16
             local err = sodium.crypto_aead_chacha20poly1305_ietf_encrypt(
-                pkt, nil, -- cipertext (dst)
-                pkt, len, -- plaintext (src)
+                payload, nil, -- cipertext (dst)
+                payload, innerL3Len, -- plaintext (src)
                 nil, 0,  -- addition data (unused)
                 nil, -- nsec (unused)
                 nonce, key
@@ -111,12 +144,16 @@ function slaveTaskEncrypt(gwDevQueue, tunDevQueue)
                 return
             end
 
+            -- debug: transformed packet
+            -- buf:getUdp4Packet():dump(72)
+
+
             -- Counter check
-            -- local cleartext = ffi.new("uint8_t[?]", len)
+            -- local cleartext = ffi.new("uint8_t[?]", innerL3Len)
             -- err = sodium.crypto_aead_chacha20poly1305_ietf_decrypt(
             --     cleartext, nil, -- plaintext
             --     nil, -- nsec (unused)
-            --     pkt, len + sodium.crypto_aead_chacha20poly1305_IETF_ABYTES, -- ciphertext
+            --     payload, innerL3Len + sodium.crypto_aead_chacha20poly1305_IETF_ABYTES, -- ciphertext
             --     nil, 0, -- addition data (unused)
             --     nonce, key
             -- )
@@ -131,6 +168,7 @@ function slaveTaskEncrypt(gwDevQueue, tunDevQueue)
             -- debug stats
             --headroom, tailroom = dpdk_export.rte_pktmbuf_headroom_export(buf), dpdk_export.rte_pktmbuf_tailroom_export(buf)
             --print(headroom, tailroom)
+            ::skip::
         end
         tunDevQueue:sendN(bufs, rx)
     end
