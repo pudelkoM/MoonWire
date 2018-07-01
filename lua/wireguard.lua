@@ -22,6 +22,8 @@ function configure(parser)
     return args
 end
 
+-- TODO: rename file to something with gateway or forward in name
+
 function master(args)
     args.rxThreads = 1
 
@@ -36,12 +38,13 @@ function master(args)
         rxQueues = args.rxThreads,
         rssQueues = args.rxThreads
     }
-    
+
     -- device.waitForLinks()
 
     stats.startStatsTask{devices = {args.gateway, args.tunnel}}
 
     lm.startTask("slaveTaskEncrypt", args.gateway:getRxQueue(0), args.tunnel:getTxQueue(0))
+    lm.startTask("slaveTaskDecrypt", args.gateway:getTxQueue(0), args.tunnel:getRxQueue(0))
 
     lm.waitForTasks()
     log:info("[master]: Shutdown")
@@ -114,6 +117,8 @@ function slaveTaskEncrypt(gwDevQueue, tunDevQueue)
             -- move ethernet + IPv4 header
             ffi.copy(buf:getBytes(), buf:getBytes() + inc_headroom, 14 + 20)
 
+            -- TODO: fix outer IPv4 header
+
             -- create outer UDP header
             local outerUdpPacket = buf:getUdp4Packet()
             outerUdpPacket.udp:fill{
@@ -173,4 +178,87 @@ function slaveTaskEncrypt(gwDevQueue, tunDevQueue)
         tunDevQueue:sendN(bufs, rx)
     end
 
+end
+
+function slaveTaskDecrypt(gwDevQueue, tunDevQueue)
+    local srcPort, dstPort = 2000, 3000
+    local outerDstIP = ffi.new("union ip4_address"):setString("10.0.0.1")
+
+    if sodium.sodium_init() < 0 then
+        log:error("Setting up libsodium")
+        lm.stop()
+    end
+    
+    local key, _ = handshake()
+    local nonce = ffi.new("uint8_t[?]", sodium.crypto_aead_chacha20poly1305_ietf_npubbytes())
+    
+    local bufs = memory.bufArray()
+    while lm.running() do
+        local rx = tunDevQueue:tryRecv(bufs, 1000)
+        for i = 1, rx do
+            local buf = bufs[i]
+
+            local ethPkt = buf:getEthPacket()
+            if ethPkt.eth:getType() ~= eth.TYPE_IP then
+                log:error("Received unsupported L3 type: " .. ethPkt.eth:getTypeString())
+                goto skip
+            end
+
+            local ipPacket = buf:getIP4Packet()
+            if ipPacket.ip4:getProtocol() ~= ip4.PROTO_UDP then
+                log:error("Received non UDP packet: " .. ipPacket.ip4:getProtocolString())
+                goto skip
+            end
+
+            -- We don't actually know yet if it's really a data frame, but the header is uniform across all types
+            local message_data = ffi.cast("struct message_data*", buf:getBytes() + 14 + 20 + 8)
+            if message_data.header.type ~= ffi.C.MESSAGE_DATA then
+                log:error("Received unknown wireguard frame: " .. message_data.header.type)
+                goto skip
+            end
+
+            if message_data.key_idx ~= 1 then
+                log:error("Unknown key index: " .. message_data.key_idx)
+                goto skip
+            end
+
+            ffi.cast("uint64_t*", nonce)[0] = message_data.counter
+
+            local payload = buf:getBytes() + 14 + 20 + 8 + 16
+            local innerL3Len = buf:getSize() - 20 - 8 - 16
+            local err = sodium.crypto_aead_chacha20poly1305_ietf_decrypt(
+                payload, nil, -- plaintext
+                nil, -- nsec (unused)
+                payload, innerL3Len + sodium.crypto_aead_chacha20poly1305_IETF_ABYTES, -- ciphertext
+                nil, 0, -- addition data (unused)
+                nonce, key
+            )
+            if err ~= 0 then
+                log:error("Could not decrypt packet")
+                goto skip
+            end
+
+            -- Move ethernet header
+            ffi.copy(buf:getBytes() + 20 + 8 + 16, buf:getBytes(), 14)
+
+            -- Truncate mbuf
+            if rte_pktmbuf_trim_export(buf, sodium.crypto_aead_chacha20poly1305_IETF_ABYTES) ~= 0 then
+                log:error("error trimming tailroom")
+                lm.stop()
+                return
+            end
+
+            if rte_pktmbuf_adj_export(buf, 20 + 16 + 8) == nil then
+                log:error("error trimming headroom")
+                lm.stop()
+                return
+            end
+
+            -- debug: decrypted packet
+            -- buf:getUdp4Packet():dump(72)
+            
+            ::skip::
+        end
+        gwDevQueue:sendN(bufs, rx)
+    end
 end
