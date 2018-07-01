@@ -1,5 +1,20 @@
 local ffi = require "ffi"
-local bor, band, bnot, rshift, lshift= bit.bor, bit.band, bit.bnot, bit.rshift, bit.lshift
+local bor, band, bnot, rshift, lshift = bit.bor, bit.band, bit.bnot, bit.rshift, bit.lshift
+
+local dpdk_export = require "missing-dpdk-stuff"
+local sodium = require "sodium"
+
+local eth = require "proto.ethernet"
+local ip4 = require "proto.ip4"
+
+
+local wg = {}
+
+wg.MESSAGE_INVALID = 0
+wg.MESSAGE_HANDSHAKE_INITIATION = 1
+wg.MESSAGE_HANDSHAKE_RESPONSE = 2
+wg.MESSAGE_HANDSHAKE_COOKIE = 3
+wg.MESSAGE_DATA = 4
 
 ffi.cdef[[
     enum message_type {
@@ -39,11 +54,121 @@ message_header.__index = message_header
 ffi.metatype("struct message_header", message_header)
 
 local message_data = {}
+
 function message_data:__tostring()
     return ("struct message_data {header: %s, key_idx: %u, counter: %s}"):format(self.header, self.key_idx, tostring(self.counter))
 end
+
 message_data.__index = message_data
 ffi.metatype("struct message_data", message_data)
+
+-- Does not validate the packet
+function wg._getWgDataPacket(buf, offset)
+    offset = offset or 14 + 20 + 8
+    return ffi.cast("struct message_data*", buf:getBytes() + offset)
+end
+
+-- Returns wireguard packet
+function wg.getWgDataPacket(buf)
+    local offset = 14 -- Ethernet header
+
+    -- Check for IPv4
+    local ethPkt = buf:getEthPacket()
+    if ethPkt.eth:getType() ~= eth.TYPE_IP then
+        return nil, "Unsupported L3 type: " .. ethPkt.eth:getTypeString()
+    end
+
+    local ipPacket = buf:getIP4Packet()
+    if ipPacket.ip4:getProtocol() ~= ip4.PROTO_UDP then
+        return nil, "Non UDP packet: " .. ipPacket.ip4:getProtocolString()
+    end
+    offset = offset + ipPacket.ip4:getHeaderLength() * 4
+    offset = offset + 8 -- UDP header
+
+    -- We don't actually know yet if it's really a data frame, but the header is uniform across all types
+    local message_data = ffi.cast("struct message_data*", buf:getBytes() + offset)
+    if message_data.header.type ~= wg.MESSAGE_DATA then
+        return nil, "Received unknown wireguard frame: " .. message_data.header.type
+    end
+
+    return message_data
+end
+
+function wg.encrypt(buf, key, nonce, tunnelSrc, tunnelDst, srcPort, dstPort, key_idx)
+    -- mbuf layout transformation is as follows:
+    -- from:
+    -- | ethernet header | inner L3 packet |
+    -- to:
+    -- | new ethernet header | outer IP header | outer UDP header | WG data message header | encrypted L3 packet |
+
+    -- save inner L3 packet size
+    local innerL3Len = buf:getSize() - 14
+    
+    -- extend mbuf tailroom for AEAD auth tag
+    if dpdk_export.rte_pktmbuf_append_export(buf, sodium.crypto_aead_chacha20poly1305_IETF_ABYTES) == nil then
+        return "Could not extend tailroom"
+    end
+
+    -- extend headroom for WG data messsage header
+    local inc_headroom = ffi.sizeof("struct message_data") + 20 + 8 -- new IPv4 & UDP header
+    if dpdk_export.rte_pktmbuf_prepend_export(buf, inc_headroom) == nil then
+        return "Could not extend headroom"
+    end
+
+    -- Create outer headers
+    -- TODO: Use correct Src & Dst MACs
+    local pkt = buf:getUdp4Packet()
+    pkt.eth:setType(eth.TYPE_IP)
+    pkt.eth.dst:set(0x010203040506ull)
+    pkt.eth.src:set(0x0a0b0c0d0e0full)
+
+    pkt.ip4:setVersion()
+    pkt.ip4:setHeaderLength()
+    pkt.ip4:setTOS()
+    pkt.ip4:setLength(innerL3Len + inc_headroom + sodium.crypto_aead_chacha20poly1305_IETF_ABYTES)
+    pkt.ip4:setID()
+    pkt.ip4:setFlags()
+    pkt.ip4:setFragment()
+    pkt.ip4:setTTL()
+    pkt.ip4:setProtocol(ip4.PROTO_UDP)
+    pkt.ip4:setChecksum()
+    pkt.ip4.src.uint32 = tunnelSrc.uint32
+    pkt.ip4.dst.uint32 = tunnelDst.uint32
+
+    pkt.udp:fill{
+        udpSrc = srcPort,
+        udpDst = dstPort,
+        udpLength = innerL3Len + ffi.sizeof("struct message_data") + sodium.crypto_aead_chacha20poly1305_IETF_ABYTES,
+        udpChecksum = 0x0 -- disable checksumming since we have crypto authentication
+    }
+
+    -- create WG data message header
+    local msgData = ffi.cast("struct message_data*", buf:getBytes() + 14 + 20 + 8)
+    msgData.header.type = wg.MESSAGE_DATA
+    msgData.key_idx = key_idx
+    msgData.counter = ffi.cast("uint64_t*", nonce)[0] -- high 8 bytes in little-endian
+
+    local payload = buf:getBytes() + 14 + 20 + 8 + 16
+    if msgData.encrypted_data ~= payload then
+        return "offset calculation fail"
+    end
+    if buf:getSize() ~= pkt.ip4:getLength() + 14 then
+        return "buf size != ip length: " .. buf:getSize() .. " " .. pkt.ip4:getLength()
+    end
+    local err = sodium.crypto_aead_chacha20poly1305_ietf_encrypt(
+        payload, nil, -- cipertext (dst)
+        payload, innerL3Len, -- plaintext (src)
+        nil, 0,  -- addition data (unused)
+        nil, -- nsec (unused)
+        nonce, key
+    )
+    if err ~= 0 then
+        return "Error encrypting packet: " .. err
+    end
+    return nil
+end
+
+return wg
 
 -- ffi.cdef[[
 --     enum curve25519_lengths {
