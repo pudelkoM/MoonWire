@@ -116,6 +116,7 @@ function txSlave(queue, dstMac, pktLen)
                         udpDst = DST_PORT,
                         pktLength = pktLen
                 }
+                buf:getUdpPacket().ip4:setFlags(2) -- Don't fragment
         end)
         -- a bufArray is just a list of buffers from a mempool that is processed as a single batch
         local bufs = mempool:bufArray()
