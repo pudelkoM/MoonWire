@@ -1,0 +1,19 @@
+# WireGuard 0.0.20180625, 64 byte packets, Linux 4.4.0-109-generic, Intel(R) Xeon(R) CPU E5-2620 v3 @ 2.40GHz
+# Sending side: ./libmoon/build/libmoon ../pktgen-fixed.lua --size=60 --rate=XXX --threads=X 0 5
+# VPN side: ../netpps.sh wg0 1, perf stat -d -a -- sleep 60
+
+# offered load [Mpps], VPN encryption forwarding rate [Mpps], system-wide CPU load on VPN encrypter [GHz], e2e rate [Mpps]
+0.21, 0.21, 0.517, 0.21
+0.43, 0.43, 0.888, 0.37
+0.64, 0.64, 1.260, 0.38
+0.75, 0.70, 1.298, 0.37
+0.85, 0.665, 1.369, 0.37
+1.07, 0.63, 1.414, 0.37
+1.28, 0.58, 1.495, 0.39
+1.49, 0.515, 1.538, 0.38
+1.71, 0.43, 1.627, 0.38
+2.13, 0.25, 1.860, 0.25
+2.55, 0.00, 2.391, 0.00
+2.98, 0.00, 2.391, 0.00
+3.41, 0.00, 2.391, 0.00
+4.27, 0.00, 2.391, 0.00
