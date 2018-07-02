@@ -15,14 +15,14 @@ ip addr flush dev enp2s0f0
 
 ip a add 10.0.1.2/24 dev ens1f0
 ip a add 10.0.0.2/24 dev enp2s0f0
-ip l set up dev ens1f0
-ip l set up dev enp2s0f0
 ip l set mtu 1600 dev ens1f0
 ip l set mtu 1600 dev enp2s0f0
-ip l set mtu 1520 dev wg0 # https://lists.zx2c4.com/pipermail/wireguard/2017-December/002201.html
+ip l set up dev ens1f0
+ip l set up dev enp2s0f0
 sysctl -w net.ipv4.ip_forward=1
 
 ip link add dev wg0 type wireguard
+ip l set mtu 1520 dev wg0 # https://lists.zx2c4.com/pipermail/wireguard/2017-December/002201.html
 ip a add 192.168.0.2/24 dev wg0
 
 cat << EOF > /tmp/wg.conf

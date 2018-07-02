@@ -20,11 +20,11 @@ ip a add 10.0.2.1/24 dev ens3f1
 ip a add 10.0.1.1/24 dev ens4f0
 ip l set mtu 1600 dev ens3f1
 ip l set mtu 1600 dev ens4f0
-ip l set mtu 1520 dev wg0 # https://lists.zx2c4.com/pipermail/wireguard/2017-December/002201.html
 ip l set up dev ens3f1
 ip l set up dev ens4f0
 
 ip link add dev wg0 type wireguard
+ip l set mtu 1520 dev wg0 # https://lists.zx2c4.com/pipermail/wireguard/2017-December/002201.html
 ip a add 192.168.0.1/24 dev wg0
 sysctl -w net.ipv4.ip_forward=1
 
