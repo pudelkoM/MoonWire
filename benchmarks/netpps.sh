@@ -14,14 +14,17 @@ fi
 IF=$1
 INTERVAL="$2"  # update interval in seconds
 
+R1=`cat /sys/class/net/$1/statistics/rx_packets`
+T1=`cat /sys/class/net/$1/statistics/tx_packets`
+
 while true
 do
-        R1=`cat /sys/class/net/$1/statistics/rx_packets`
-        T1=`cat /sys/class/net/$1/statistics/tx_packets`
         sleep $INTERVAL
         R2=`cat /sys/class/net/$1/statistics/rx_packets`
         T2=`cat /sys/class/net/$1/statistics/tx_packets`
-        TXPPS=`expr $T2 - $T1`
-        RXPPS=`expr $R2 - $R1`
-        echo "TX $1: $TXPPS pkts/s RX $1: $RXPPS pkts/s"
+        TXPPS=`echo "scale=1; ($T2 - $T1) / ($INTERVAL * 1000000)" | bc`
+        RXPPS=`echo "scale=1; ($R2 - $R1) / ($INTERVAL * 1000000)" | bc`
+        echo "$(date -Iseconds) $1 TX $TXPPS Mpps, RX $RXPPS Mpps"
+        R1=$R2
+        T1=$T2
 done
