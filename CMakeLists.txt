@@ -21,4 +21,4 @@ ADD_LIBRARY(dpdk-pktmbuf-export SHARED ${SRC})
 
 INCLUDE_DIRECTORIES(src/libsodium/build/include)
 ADD_EXECUTABLE(sodium-bench benchmarks/libsodium/encrypt.c)
-TARGET_LINK_LIBRARIES(sodium-bench ${CMAKE_SOURCE_DIR}/src/libsodium/build/lib/libsodium.a)
+TARGET_LINK_LIBRARIES(sodium-bench ${CMAKE_SOURCE_DIR}/src/libsodium/build/lib/libsodium.a rt)
