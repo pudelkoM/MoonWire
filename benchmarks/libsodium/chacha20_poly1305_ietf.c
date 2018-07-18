@@ -7,11 +7,11 @@
 bool inplace = true;
 
 static void handler(union sigval sv) {
-    bool *flag = sv.sival_ptr;
+    volatile sig_atomic_t *flag = sv.sival_ptr;
     *flag = false;
 }
 
-static timer_t setup_timer(bool *flag) {
+static timer_t setup_timer(void *flag) {
     timer_t timerid;
 
     struct sigevent sev = {
@@ -48,12 +48,12 @@ int main(void) {
         return 1;
     }
 
-    bool running = true;
-    timer_t t = setup_timer(&running);
+    volatile sig_atomic_t running = true;
+    timer_t t = setup_timer((void*) &running);
 
     struct timespec t1, t2;
 
-    uint8_t key[crypto_aead_chacha20poly1305_IETF_KEYBYTES];
+    uint8_t key[crypto_aead_chacha20poly1305_IETF_KEYBYTES] = {};
     uint8_t nonce[crypto_aead_chacha20poly1305_IETF_NPUBBYTES] = {};
     uint8_t* message;
     uint8_t* ciphertext;
@@ -64,7 +64,7 @@ int main(void) {
 
     size_t block_sizes[] = {60, 128, 256, 512, 1280, 1514, 8000, 15 * 1024, 64 * 1024};
 
-    printf("# block_size, elapsed_seconds, operations_per_second, Mbits_per_second\n");
+    printf("# block_size, enc_operations_per_second, enc_Mbits_per_second, dec_operations_per_second, dec_Mbits_per_second\n");
 
     for (size_t i = 0; i < sizeof(block_sizes) / sizeof(*block_sizes); i++) {
         // Init
@@ -77,8 +77,7 @@ int main(void) {
             ciphertext = malloc(bs + crypto_aead_chacha20poly1305_IETF_ABYTES);
         }
 
-
-        // Bench
+        // Bench encryption
         running = true;
         uint64_t runs = 0;
         reset_timer(t);
@@ -100,11 +99,10 @@ int main(void) {
         }
         clock_gettime(CLOCK_MONOTONIC, &t2);
 
-        uint64_t elapsed = (t2.tv_nsec + t2.tv_sec * 1e9) - (t1.tv_nsec + t1.tv_sec * 1e9);
-        double secs = elapsed / 1e9;
-        double ops = runs / secs;
-        double mbpps = (bs * runs * 8) / (secs * 1e6);
-        printf("%zu, %.2lf, %.2lf, %.2lf\n", bs, secs, ops, mbpps);
+        uint64_t elapsed_enc = (t2.tv_nsec + t2.tv_sec * 1e9) - (t1.tv_nsec + t1.tv_sec * 1e9);
+        double secs_enc = elapsed_enc / 1e9;
+        double ops_enc = runs / secs_enc;
+        double mbpps_enc = (bs * runs * 8) / (secs_enc * 1e6);
 
         // Consistency check
         int err = crypto_aead_chacha20poly1305_ietf_decrypt(message, NULL,
@@ -112,11 +110,32 @@ int main(void) {
                 ciphertext, bs + crypto_aead_chacha20poly1305_IETF_ABYTES,
                 NULL, 0,
                 nonce, key);
-
         if (err != 0) {
             fprintf(stderr, "Message decryption failed!\n");
             exit(1);
         }
+
+        // Bench encryption + decryption
+        running = true;
+        runs = 0;
+        reset_timer(t);
+        clock_gettime(CLOCK_MONOTONIC, &t1);
+        while (running) {
+            crypto_aead_chacha20poly1305_ietf_encrypt(ciphertext, NULL, message, bs, NULL, 0, NULL, nonce, key);
+            crypto_aead_chacha20poly1305_ietf_decrypt(message, NULL, NULL, ciphertext, bs + crypto_aead_chacha20poly1305_IETF_ABYTES, NULL, 0, nonce, key);
+            ++runs;
+        }
+        clock_gettime(CLOCK_MONOTONIC, &t2);
+
+        uint64_t elapsed_combined = (t2.tv_nsec + t2.tv_sec * 1e9) - (t1.tv_nsec + t1.tv_sec * 1e9);
+        double secs_combined = elapsed_combined / 1e9;
+        double ops_combined = runs / secs_combined;
+        double mbpps_combined = (bs * runs * 8) / (secs_combined * 1e6);
+
+        // Estimate decryption times
+        double ops_dec = 1 / ((1 / ops_combined) - (1 / ops_enc));
+        double mbpps_dec = 1 / ((1 / mbpps_combined) - (1 / mbpps_enc));
+        printf("%zu, %.2lf, %.2lf, %.2lf, %.2lf\n", bs, ops_enc, mbpps_enc, ops_dec, mbpps_dec);
 
         // Cleanup
         if (inplace) {
