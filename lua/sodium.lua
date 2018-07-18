@@ -50,18 +50,6 @@ function module.sodium_increment(n, nlen)
     sodiumlib.sodium_increment(n, nlen)
 end
 
-function module.crypto_aead_chacha20poly1305_ietf_keybytes()
-    return sodiumlib.crypto_aead_chacha20poly1305_ietf_keybytes()
-end
-
-function module.crypto_aead_chacha20poly1305_ietf_npubbytes()
-    return sodiumlib.crypto_aead_chacha20poly1305_ietf_npubbytes()
-end
-
-function module.crypto_aead_chacha20poly1305_ietf_abytes()
-    return sodiumlib.crypto_aead_chacha20poly1305_ietf_abytes()
-end
-
 function module.crypto_aead_chacha20poly1305_ietf_encrypt(c, clen, m, mlen, ad, adlen, nsec, npub, k)
     return sodiumlib.crypto_aead_chacha20poly1305_ietf_encrypt(c, clen, m, mlen, ad, adlen, nsec, npub, k)
 end
