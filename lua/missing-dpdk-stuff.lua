@@ -1,5 +1,5 @@
 local ffi = require "ffi"
-local dpdk_export_lib = ffi.load("../build/dpdk-pktmbuf-export")
+local dpdk_export_lib = ffi.load("./build/dpdk-pktmbuf-export")
 
 ffi.cdef[[
     uint16_t rte_pktmbuf_headroom_export(const struct rte_mbuf *m);

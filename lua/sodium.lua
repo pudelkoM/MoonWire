@@ -1,6 +1,6 @@
 local ffi = require "ffi"
 local C = ffi.C
-local sodiumlib = ffi.load("../src/libsodium/build/lib/sodium")
+local sodiumlib = ffi.load("./src/libsodium/build/lib/sodium")
 
 local module = {}
 
