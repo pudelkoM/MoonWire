@@ -6,9 +6,9 @@ git submodule update --init --recursive
 
 # Build libsodium
 cd src/libsodium/
-mkdir build
+mkdir -p build
 ./configure --prefix $(realpath ./build/) --exec-prefix $(realpath ./build/)
-make
+make -j
 make install
 cd ../../
 
@@ -20,10 +20,10 @@ sudo apt-get install git build-essential cmake linux-headers-`uname -r` lshw lib
 cd ..
 
 # Build helpers
-mkdir build
+mkdir -p build
 cd build
 cmake ..
-make
+make -j
 cd ..
 
 
