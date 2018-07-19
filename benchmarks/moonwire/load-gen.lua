@@ -6,7 +6,8 @@ local log = require "log"
 local stats = require "stats"
 local ip4 = require "proto.ip4"
 local eth = require "proto.ethernet"
-local dpdk_export = require "missing-dpdk-stuff"
+
+package.path = package.path .. ";./lua/?.lua"
 
 local msg = require "messages"
 local sodium = require "sodium"
@@ -50,7 +51,7 @@ function master(args)
     for i = 1, args.txThreads do
         local queue = args.txdev:getTxQueue(i - 1)
         if args.rate then
-                queue:setRate(args.rate / args.threads)
+                queue:setRate(args.rate / args.txThreads)
         end
         lm.startTask("txSlave", queue, DST_MAC, args.size)
     end
@@ -64,11 +65,11 @@ function master(args)
 end
 
 local function handshake()
-    local txKey = ffi.new("uint8_t[?]", sodium.crypto_aead_chacha20poly1305_ietf_keybytes())
-    ffi.fill(txKey, sodium.crypto_aead_chacha20poly1305_ietf_keybytes(), 0xab)
+    local txKey = ffi.new("uint8_t[?]", sodium.crypto_aead_chacha20poly1305_IETF_KEYBYTES)
+    ffi.fill(txKey, sodium.crypto_aead_chacha20poly1305_IETF_KEYBYTES, 0xab)
 
-    local rxKey = ffi.new("uint8_t[?]", sodium.crypto_aead_chacha20poly1305_ietf_keybytes())
-    ffi.fill(rxKey, sodium.crypto_aead_chacha20poly1305_ietf_keybytes(), 0xef)
+    local rxKey = ffi.new("uint8_t[?]", sodium.crypto_aead_chacha20poly1305_IETF_KEYBYTES)
+    ffi.fill(rxKey, sodium.crypto_aead_chacha20poly1305_IETF_KEYBYTES, 0xef)
 
     return txKey, rxKey
 end
@@ -85,6 +86,9 @@ function txSlave(queue, dstMac, pktLen)
                     pktLength = pktLen
             }
             buf:getUdpPacket().ip4:setFlags(2) -- Don't fragment
+            local payload = buf:getBytes() + 14 + 20 + 8
+            payload[0] = 0xab
+            payload[1] = 0xcd
     end)
     local bufs = mempool:bufArray()
     while lm.running() do -- check if Ctrl+c was pressed
@@ -108,74 +112,24 @@ function slaveTaskDecrypt(queue)
     end
     
     local key, _ = handshake()
-    local nonce = ffi.new("uint8_t[?]", sodium.crypto_aead_chacha20poly1305_ietf_npubbytes())
+    local nonce = ffi.new("uint8_t[?]", sodium.crypto_aead_chacha20poly1305_IETF_NPUBBYTES)
     
     local bufs = memory.bufArray()
     while lm.running() do
         local rx = queue:tryRecv(bufs, 1000)
         for i = 1, rx do
             local buf = bufs[i]
-
-            local ethPkt = buf:getEthPacket()
-            if ethPkt.eth:getType() ~= eth.TYPE_IP then
-                log:error("Received unsupported L3 type: " .. ethPkt.eth:getTypeString())
-                goto skip
-            end
-
-            local ipPacket = buf:getIP4Packet()
-            if ipPacket.ip4:getProtocol() ~= ip4.PROTO_UDP then
-                log:error("Received non UDP packet: " .. ipPacket.ip4:getProtocolString())
-                goto skip
-            end
-
-            -- We don't actually know yet if it's really a data frame, but the header is uniform across all types
-            local message_data = ffi.cast("struct message_data*", buf:getBytes() + 14 + 20 + 8)
-            if message_data.header.type ~= ffi.C.MESSAGE_DATA then
-                log:error("Received unknown wireguard frame: " .. message_data.header.type)
-                goto skip
-            end
-
-            if message_data.key_idx ~= 1 then
-                log:error("Unknown key index: " .. message_data.key_idx)
-                goto skip
-            end
-
-            ffi.cast("uint64_t*", nonce)[0] = message_data.counter
-
-            local payload = buf:getBytes() + 14 + 20 + 8 + 16
-            local innerL3Len = buf:getSize() - 20 - 8 - 16
-            local err = sodium.crypto_aead_chacha20poly1305_ietf_decrypt(
-                payload, nil, -- plaintext
-                nil, -- nsec (unused)
-                payload, innerL3Len + sodium.crypto_aead_chacha20poly1305_IETF_ABYTES, -- ciphertext
-                nil, 0, -- addition data (unused)
-                nonce, key
-            )
-            if err ~= 0 then
-                log:error("Could not decrypt packet")
-                goto skip
-            end
-
-            -- Move ethernet header
-            ffi.copy(buf:getBytes() + 20 + 8 + 16, buf:getBytes(), 14)
-
-            -- Truncate mbuf
-            if rte_pktmbuf_trim_export(buf, sodium.crypto_aead_chacha20poly1305_IETF_ABYTES) ~= 0 then
-                log:error("error trimming tailroom")
+            local err = msg.decrypt(buf, key, nonce)
+            if err ~= nil then
+                log:error(err)
                 lm.stop()
-                return
-            end
-
-            if rte_pktmbuf_adj_export(buf, 20 + 16 + 8) == nil then
-                log:error("error trimming headroom")
-                lm.stop()
+                buf:getUdp4Packet():dump(buf:getSize())
+                print(msg._getWgDataPacket(buf))
                 return
             end
 
             -- debug: decrypted packet
-            -- buf:getUdp4Packet():dump(72)
-            
-            ::skip::
+            -- buf:dump(buf:getSize())
         end
         bufs:freeAll()
     end

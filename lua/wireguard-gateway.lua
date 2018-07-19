@@ -22,8 +22,6 @@ function configure(parser)
     return args
 end
 
--- TODO: rename file to something with gateway or forward in name
-
 function master(args)
     args.rxThreads = 1
 
@@ -51,11 +49,11 @@ function master(args)
 end
 
 local function handshake()
-    local txKey = ffi.new("uint8_t[?]", sodium.crypto_aead_chacha20poly1305_ietf_keybytes())
-    ffi.fill(txKey, sodium.crypto_aead_chacha20poly1305_ietf_keybytes(), 0xab)
+    local txKey = ffi.new("uint8_t[?]", sodium.crypto_aead_chacha20poly1305_IETF_KEYBYTES)
+    ffi.fill(txKey, sodium.crypto_aead_chacha20poly1305_IETF_KEYBYTES, 0xab)
 
-    local rxKey = ffi.new("uint8_t[?]", sodium.crypto_aead_chacha20poly1305_ietf_keybytes())
-    ffi.fill(rxKey, sodium.crypto_aead_chacha20poly1305_ietf_keybytes(), 0xef)
+    local rxKey = ffi.new("uint8_t[?]", sodium.crypto_aead_chacha20poly1305_IETF_KEYBYTES)
+    ffi.fill(rxKey, sodium.crypto_aead_chacha20poly1305_IETF_KEYBYTES, 0xef)
 
     return txKey, rxKey
 end
@@ -72,9 +70,11 @@ function slaveTaskEncrypt(gwDevQueue, tunDevQueue)
     log:info("sodium init done")
 
     local key, _ = handshake()
-    local nonce = ffi.new("uint8_t[?]", sodium.crypto_aead_chacha20poly1305_ietf_npubbytes())
-    print(nonce, sodium.crypto_aead_chacha20poly1305_ietf_npubbytes())
+    local nonce = ffi.new("uint8_t[?]", sodium.crypto_aead_chacha20poly1305_IETF_NPUBBYTES)
+    --sodium.randombytes_buf(nonce, sodium.crypto_aead_chacha20poly1305_IETF_NPUBBYTES)
+    ffi.fill(nonce + 8, 4, 0) -- lower 4 bytes are 0 since counter is only 8 bytes
 
+    require("jit.p").start("fl")
     local bufs = memory.bufArray()
     while lm.running() do
         local rx = gwDevQueue:tryRecv(bufs, 1000)
@@ -98,17 +98,19 @@ function slaveTaskEncrypt(gwDevQueue, tunDevQueue)
             -- print("post", buf.pkt_len, buf.data_len)
             -- headroom, tailroom = dpdk_export.rte_pktmbuf_headroom_export(buf), dpdk_export.rte_pktmbuf_tailroom_export(buf)
             -- print(headroom, tailroom)
-
+            
             ::skip::
         end
         tunDevQueue:sendN(bufs, rx)
     end
+    require("jit.p").stop()
 
 end
 
 function slaveTaskDecrypt(gwDevQueue, tunDevQueue)
     local srcPort, dstPort = 2000, 3000
     local outerDstIP = ffi.new("union ip4_address"):setString("10.0.0.1")
+    local srcMac = gwDevQueue:getMacAddr()
 
     if sodium.sodium_init() < 0 then
         log:error("Setting up libsodium")
@@ -116,75 +118,40 @@ function slaveTaskDecrypt(gwDevQueue, tunDevQueue)
     end
     
     local key, _ = handshake()
-    local nonce = ffi.new("uint8_t[?]", sodium.crypto_aead_chacha20poly1305_ietf_npubbytes())
+    local nonce = ffi.new("uint8_t[?]", sodium.crypto_aead_chacha20poly1305_IETF_NPUBBYTES)
     
     local bufs = memory.bufArray()
+
+    -- Array holding bufs that should be forwarded
+    local txBufs = memory.bufArray()
+
+    local appendBuf = function(array, buf)
+        array:resize(array.size + 1)
+        array[array.size - 1] = buf
+    end
+
     while lm.running() do
         local rx = tunDevQueue:tryRecv(bufs, 1000)
+        txBufs:resize(0)
         for i = 1, rx do
             local buf = bufs[i]
-
-            local ethPkt = buf:getEthPacket()
-            if ethPkt.eth:getType() ~= eth.TYPE_IP then
-                log:error("Received unsupported L3 type: " .. ethPkt.eth:getTypeString())
-                goto skip
-            end
-
-            local ipPacket = buf:getIP4Packet()
-            if ipPacket.ip4:getProtocol() ~= ip4.PROTO_UDP then
-                log:error("Received non UDP packet: " .. ipPacket.ip4:getProtocolString())
-                goto skip
-            end
-
-            -- We don't actually know yet if it's really a data frame, but the header is uniform across all types
-            local message_data = ffi.cast("struct message_data*", buf:getBytes() + 14 + 20 + 8)
-            if message_data.header.type ~= ffi.C.MESSAGE_DATA then
-                log:error("Received unknown wireguard frame: " .. message_data.header.type)
-                goto skip
-            end
-
-            if message_data.key_idx ~= 1 then
-                log:error("Unknown key index: " .. message_data.key_idx)
-                goto skip
-            end
-
-            ffi.cast("uint64_t*", nonce)[0] = message_data.counter
-
-            local payload = buf:getBytes() + 14 + 20 + 8 + 16
-            local innerL3Len = buf:getSize() - 20 - 8 - 16
-            local err = sodium.crypto_aead_chacha20poly1305_ietf_decrypt(
-                payload, nil, -- plaintext
-                nil, -- nsec (unused)
-                payload, innerL3Len + sodium.crypto_aead_chacha20poly1305_IETF_ABYTES, -- ciphertext
-                nil, 0, -- addition data (unused)
-                nonce, key
-            )
-            if err ~= 0 then
-                log:error("Could not decrypt packet")
-                goto skip
-            end
-
-            -- Move ethernet header
-            ffi.copy(buf:getBytes() + 20 + 8 + 16, buf:getBytes(), 14)
-
-            -- Truncate mbuf
-            if rte_pktmbuf_trim_export(buf, sodium.crypto_aead_chacha20poly1305_IETF_ABYTES) ~= 0 then
-                log:error("error trimming tailroom")
-                lm.stop()
-                return
-            end
-
-            if rte_pktmbuf_adj_export(buf, 20 + 16 + 8) == nil then
-                log:error("error trimming headroom")
-                lm.stop()
-                return
+            
+            local err = msg.decrypt(buf, key, nonce)
+            if err == nil then
+                -- Emplace new ethernet header
+                local ethpkt = buf:getEthPacket()
+                ethpkt.eth:setType(eth.TYPE_IP)
+                ethpkt.eth.dst:set(0x010203040506ull)
+                ethpkt.eth.src:set(0x0a0b0c0d0e0full)
+                appendBuf(txBufs, buf)
+            else
+                log:error(err)
+                buf:free()
             end
 
             -- debug: decrypted packet
             -- buf:getUdp4Packet():dump(72)
-            
-            ::skip::
         end
-        gwDevQueue:sendN(bufs, rx)
+        gwDevQueue:sendN(txBufs, txBufs.size)
     end
 end
