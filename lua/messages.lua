@@ -56,7 +56,7 @@ ffi.metatype("struct message_header", message_header)
 local message_data = {}
 
 function message_data:__tostring()
-    return ("struct message_data {header: %s, key_idx: %u, counter: %s}"):format(self.header, self.key_idx, tostring(self.counter))
+    return ("struct message_data {header: %s, key_idx: %u, counter: %s, data: [%x]}"):format(self.header, self.key_idx, tostring(self.counter), self.encrypted_data[0])
 end
 
 message_data.__index = message_data
@@ -91,7 +91,7 @@ function wg.getWgDataPacket(buf)
         return nil, "Received unknown wireguard frame: " .. message_data.header.type
     end
 
-    return message_data
+    return message_data, offset
 end
 
 function wg.encrypt(buf, key, nonce, tunnelSrc, tunnelDst, srcPort, dstPort, key_idx)
@@ -109,7 +109,7 @@ function wg.encrypt(buf, key, nonce, tunnelSrc, tunnelDst, srcPort, dstPort, key
         return "Could not extend tailroom"
     end
 
-    -- extend headroom for WG data messsage header
+    -- extend headroom for outer headers
     local inc_headroom = ffi.sizeof("struct message_data") + 20 + 8 -- new IPv4 & UDP header
     if dpdk_export.rte_pktmbuf_prepend_export(buf, inc_headroom) == nil then
         return "Could not extend headroom"
@@ -156,8 +156,8 @@ function wg.encrypt(buf, key, nonce, tunnelSrc, tunnelDst, srcPort, dstPort, key
         return "buf size != ip length: " .. buf:getSize() .. " " .. pkt.ip4:getLength()
     end
     local err = sodium.crypto_aead_chacha20poly1305_ietf_encrypt(
-        payload, nil, -- cipertext (dst)
-        payload, innerL3Len, -- plaintext (src)
+        msgData.encrypted_data, nil, -- cipertext (dst)
+        msgData.encrypted_data, innerL3Len, -- plaintext (src)
         nil, 0,  -- addition data (unused)
         nil, -- nsec (unused)
         nonce, key
@@ -165,6 +165,43 @@ function wg.encrypt(buf, key, nonce, tunnelSrc, tunnelDst, srcPort, dstPort, key
     if err ~= 0 then
         return "Error encrypting packet: " .. err
     end
+    return nil
+end
+
+function wg.decrypt(buf, key)
+    local nonce = ffi.new("uint8_t[?]", sodium.crypto_aead_chacha20poly1305_IETF_NPUBBYTES)
+    local message_data, offset = wg.getWgDataPacket(buf)
+    if message_data == nil then
+        return offset
+    end
+    if message_data.key_idx ~= 1 then
+        return "Unknown key index: " .. message_data.key_idx
+    end
+
+    ffi.cast("uint64_t*", nonce)[0] = message_data.counter
+
+    local innerL3Len = buf:getSize() - offset - 16
+    local err = sodium.crypto_aead_chacha20poly1305_ietf_decrypt(
+        message_data.encrypted_data, nil, -- plaintext
+        nil, -- nsec (unused)
+        message_data.encrypted_data, innerL3Len, -- ciphertext
+        nil, 0, -- addition data (unused)
+        nonce, key
+    )
+    if err ~= 0 then
+        return "Error decrypting packet:" .. err
+    end
+
+    -- Truncate authentication tag
+    if dpdk_export.rte_pktmbuf_trim_export(buf, sodium.crypto_aead_chacha20poly1305_IETF_ABYTES) ~= 0 then
+        return "Error trimming tailroom"
+    end
+
+    -- Remove outer headers (+ WG data header), except ethernet
+    if dpdk_export.rte_pktmbuf_adj_export(buf, offset + 16 - 14) == nil then
+        return "Error trimming headroom"
+    end
+
     return nil
 end
 
