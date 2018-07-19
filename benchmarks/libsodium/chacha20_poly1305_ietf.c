@@ -121,9 +121,23 @@ int main(void) {
         reset_timer(t);
         clock_gettime(CLOCK_MONOTONIC, &t1);
         while (running) {
+            sodium_increment(nonce, sizeof(nonce));
             crypto_aead_chacha20poly1305_ietf_encrypt(ciphertext, NULL, message, bs, NULL, 0, NULL, nonce, key);
             crypto_aead_chacha20poly1305_ietf_decrypt(message, NULL, NULL, ciphertext, bs + crypto_aead_chacha20poly1305_IETF_ABYTES, NULL, 0, nonce, key);
-            ++runs;
+            
+            sodium_increment(nonce, sizeof(nonce));
+            crypto_aead_chacha20poly1305_ietf_encrypt(ciphertext, NULL, message, bs, NULL, 0, NULL, nonce, key);
+            crypto_aead_chacha20poly1305_ietf_decrypt(message, NULL, NULL, ciphertext, bs + crypto_aead_chacha20poly1305_IETF_ABYTES, NULL, 0, nonce, key);
+            
+            sodium_increment(nonce, sizeof(nonce));
+            crypto_aead_chacha20poly1305_ietf_encrypt(ciphertext, NULL, message, bs, NULL, 0, NULL, nonce, key);
+            crypto_aead_chacha20poly1305_ietf_decrypt(message, NULL, NULL, ciphertext, bs + crypto_aead_chacha20poly1305_IETF_ABYTES, NULL, 0, nonce, key);
+            
+            sodium_increment(nonce, sizeof(nonce));
+            crypto_aead_chacha20poly1305_ietf_encrypt(ciphertext, NULL, message, bs, NULL, 0, NULL, nonce, key);
+            crypto_aead_chacha20poly1305_ietf_decrypt(message, NULL, NULL, ciphertext, bs + crypto_aead_chacha20poly1305_IETF_ABYTES, NULL, 0, nonce, key);
+            
+            runs += 4;
         }
         clock_gettime(CLOCK_MONOTONIC, &t2);
 
