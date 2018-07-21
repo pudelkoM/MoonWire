@@ -37,7 +37,7 @@ function master(args)
         rssQueues = args.rxThreads
     }
 
-    -- device.waitForLinks()
+    device.waitForLinks()
 
     stats.startStatsTask{devices = {args.gateway, args.tunnel}}
 
@@ -59,6 +59,7 @@ local function handshake()
 end
 
 function slaveTaskEncrypt(gwDevQueue, tunDevQueue)
+    -- local srcMac = tunDevQueue:getMacAddr()
     local srcPort, dstPort = 2000, 3000
     local outerSrcIP = ffi.new("union ip4_address"); outerSrcIP:setString("10.4.0.1")
     local outerDstIP = ffi.new("union ip4_address"); outerDstIP:setString("10.4.0.2")
@@ -74,7 +75,7 @@ function slaveTaskEncrypt(gwDevQueue, tunDevQueue)
     --sodium.randombytes_buf(nonce, sodium.crypto_aead_chacha20poly1305_IETF_NPUBBYTES)
     ffi.fill(nonce + 8, 4, 0) -- lower 4 bytes are 0 since counter is only 8 bytes
 
-    require("jit.p").start("fl")
+    require("jit.p").start("a")
     local bufs = memory.bufArray()
     while lm.running() do
         local rx = gwDevQueue:tryRecv(bufs, 1000)
@@ -85,13 +86,38 @@ function slaveTaskEncrypt(gwDevQueue, tunDevQueue)
             -- buf:getIP4Packet():dump(72)
             -- print("pre", buf.pkt_len, buf.data_len)
 
-            local err = msg.encrypt(buf, key, nonce, outerSrcIP, outerDstIP, srcPort, dstPort, 1)
+            local err = msg.encrypt(buf, key, nonce, 1)
             if err then
                 log:error("Failed to encrypt:" .. err)
                 goto skip
             end
 
-            sodium.sodium_increment(nonce, sodium.crypto_aead_chacha20poly1305_IETF_NPUBBYTES)
+            -- Create outer headers
+            -- TODO: Use correct Src & Dst MACs
+            local pkt = buf:getUdp4Packet()
+            pkt.eth:setType(eth.TYPE_IP)
+            pkt.eth.dst:set(0x010203040506ull)
+            pkt.eth.src:set(0x0a0b0c0d0e0full)
+
+            pkt.ip4:setVersion()
+            pkt.ip4:setHeaderLength()
+            pkt.ip4:setTOS()
+            pkt.ip4:setLength(buf:getSize() - 14)
+            pkt.ip4:setID()
+            pkt.ip4:setFlags()
+            pkt.ip4:setFragment()
+            pkt.ip4:setTTL()
+            pkt.ip4:setProtocol(ip4.PROTO_UDP)
+            pkt.ip4:setChecksum()
+            pkt.ip4.src.uint32 = outerSrcIP.uint32
+            pkt.ip4.dst.uint32 = outerDstIP.uint32
+
+            pkt.udp:fill{
+                udpSrc = srcPort,
+                udpDst = dstPort,
+                udpLength = buf:getSize() - 14 - 20,
+                udpChecksum = 0x0 -- disable checksumming since we have crypto authentication
+            }
             
             -- debug: transformed packet
             -- buf:getUdp4Packet():dump(72)

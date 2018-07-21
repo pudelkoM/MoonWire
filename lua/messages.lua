@@ -47,7 +47,7 @@ ffi.cdef[[
 local message_header = {}
 function message_header:__tostring()
     local t = band(self.type, 0xff)
-    local r0, r1, r2 = 0, 0, 0
+    local r0, r1, r2 = 0, 0, 0 -- FIXME
     return string.format("{type: %u, reserved: [%u, %u, %u], raw: %u}", t, r0, r1, r2, self.type)
 end
 message_header.__index = message_header
@@ -94,15 +94,22 @@ function wg.getWgDataPacket(buf)
     return message_data, offset
 end
 
-function wg.encrypt(buf, key, nonce, tunnelSrc, tunnelDst, srcPort, dstPort, key_idx)
+
+local default_headroom = ffi.sizeof("struct ip4_header") + ffi.sizeof("struct udp_header") + ffi.sizeof("struct message_data")
+local ether_hdr_size = ffi.sizeof("struct ether_hdr")
+
+-- TODO: padding according to spec
+function wg.encrypt(buf, key, nonce, key_idx, headroom)
     -- mbuf layout transformation is as follows:
     -- from:
     -- | ethernet header | inner L3 packet |
     -- to:
     -- | new ethernet header | outer IP header | outer UDP header | WG data message header | encrypted L3 packet |
 
+    local headroom = headroom or default_headroom
+    
     -- save inner L3 packet size
-    local innerL3Len = buf:getSize() - 14
+    local innerL3Len = buf:getSize() - ether_hdr_size
     
     -- extend mbuf tailroom for AEAD auth tag
     if dpdk_export.rte_pktmbuf_append_export(buf, sodium.crypto_aead_chacha20poly1305_IETF_ABYTES) == nil then
@@ -110,51 +117,16 @@ function wg.encrypt(buf, key, nonce, tunnelSrc, tunnelDst, srcPort, dstPort, key
     end
 
     -- extend headroom for outer headers
-    local inc_headroom = ffi.sizeof("struct message_data") + 20 + 8 -- new IPv4 & UDP header
-    if dpdk_export.rte_pktmbuf_prepend_export(buf, inc_headroom) == nil then
+    if dpdk_export.rte_pktmbuf_prepend_export(buf, headroom) == nil then
         return "Could not extend headroom"
     end
 
-    -- Create outer headers
-    -- TODO: Use correct Src & Dst MACs
-    local pkt = buf:getUdp4Packet()
-    pkt.eth:setType(eth.TYPE_IP)
-    pkt.eth.dst:set(0x010203040506ull)
-    pkt.eth.src:set(0x0a0b0c0d0e0full)
-
-    pkt.ip4:setVersion()
-    pkt.ip4:setHeaderLength()
-    pkt.ip4:setTOS()
-    pkt.ip4:setLength(innerL3Len + inc_headroom + sodium.crypto_aead_chacha20poly1305_IETF_ABYTES)
-    pkt.ip4:setID()
-    pkt.ip4:setFlags()
-    pkt.ip4:setFragment()
-    pkt.ip4:setTTL()
-    pkt.ip4:setProtocol(ip4.PROTO_UDP)
-    pkt.ip4:setChecksum()
-    pkt.ip4.src.uint32 = tunnelSrc.uint32
-    pkt.ip4.dst.uint32 = tunnelDst.uint32
-
-    pkt.udp:fill{
-        udpSrc = srcPort,
-        udpDst = dstPort,
-        udpLength = innerL3Len + ffi.sizeof("struct message_data") + sodium.crypto_aead_chacha20poly1305_IETF_ABYTES,
-        udpChecksum = 0x0 -- disable checksumming since we have crypto authentication
-    }
-
     -- create WG data message header
-    local msgData = ffi.cast("struct message_data*", buf:getBytes() + 14 + 20 + 8)
+    local msgData = ffi.cast("struct message_data*", buf:getBytes() + ether_hdr_size + headroom - ffi.sizeof("struct message_data"))
     msgData.header.type = wg.MESSAGE_DATA
     msgData.key_idx = key_idx
     msgData.counter = ffi.cast("uint64_t*", nonce)[0] -- high 8 bytes in little-endian
 
-    local payload = buf:getBytes() + 14 + 20 + 8 + 16
-    if msgData.encrypted_data ~= payload then
-        return "offset calculation fail"
-    end
-    if buf:getSize() ~= pkt.ip4:getLength() + 14 then
-        return "buf size != ip length: " .. buf:getSize() .. " " .. pkt.ip4:getLength()
-    end
     local err = sodium.crypto_aead_chacha20poly1305_ietf_encrypt(
         msgData.encrypted_data, nil, -- cipertext (dst)
         msgData.encrypted_data, innerL3Len, -- plaintext (src)
@@ -165,6 +137,7 @@ function wg.encrypt(buf, key, nonce, tunnelSrc, tunnelDst, srcPort, dstPort, key
     if err ~= 0 then
         return "Error encrypting packet: " .. err
     end
+    sodium.sodium_increment(nonce, sodium.crypto_aead_chacha20poly1305_IETF_NPUBBYTES)
     return nil
 end
 
