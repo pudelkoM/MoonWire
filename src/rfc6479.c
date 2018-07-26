@@ -22,7 +22,7 @@
  * integers is the hidden window size divided by the size of the
  * integer.
  *
- * struct ipsec_sa contains the window and window related parameters,
+ * struct rfc6479_window contains the window and window related parameters,
  * such as the window size and the last acknowledged sequence number.
  *
  * all the value of macro can be changed, but must follow the rule
@@ -30,56 +30,40 @@
  */
 
 #include <stdint.h>
+#include <stddef.h>
 
-#define SIZE_OF_INTEGER 32 /** 32-bit microprocessor */
-#define BITMAP_LEN (1024 / SIZE_OF_INTEGER) /** in terms of the 32-bit integer */
+#define SIZE_OF_INTEGER sizeof(uint64_t)
+#define REPLAY_WINDOW_SIZE 1024
+#define BITMAP_LEN (REPLAY_WINDOW_SIZE / SIZE_OF_INTEGER)
 #define BITMAP_INDEX_MASK (BITMAP_LEN - 1)
-#define REDUNDANT_BIT_SHIFTS 5
-#define REDUNDANT_BITS (1 << REDUNDANT_BIT_SHIFTS)
+#define REDUNDANT_BITS (SIZE_OF_INTEGER * 8u) /* Redundant for index calculation */
+#define REDUNDANT_BIT_SHIFTS 6u /** sqrt(SIZE_OF_INTEGER) */
 #define BITMAP_LOC_MASK (REDUNDANT_BITS - 1)
 
-struct ipsec_sa {
-    uint32_t replaywin_lastseq;
-    uint32_t replaywin_size;
-    uint32_t replaywin_bitmap[2];
+_Static_assert(REPLAY_WINDOW_SIZE && ((REPLAY_WINDOW_SIZE & (REPLAY_WINDOW_SIZE - 1)) == 0), "Window size is not a power of 2");
+_Static_assert(1 << REDUNDANT_BIT_SHIFTS == REDUNDANT_BITS, "Bit calculations do not match up");
+
+struct rfc6479_window {
+    uint64_t replaywin_lastseq;
+    uint64_t replaywin_bitmap[BITMAP_LEN];
 };
 
-int ipsec_check_replay_window(struct ipsec_sa *ipsa,
-                              uint32_t sequence_number)
-{
-    int bit_location;
-    int index;
+/* Helper function for LuaJIT bindings */
+size_t rfc6479_sizeof() {
+    return sizeof(struct rfc6479_window);
+}
 
-    /**
-     * replay shut off
-     */
-    if (ipsa->replaywin_size == 0)
-    {
-        return 1;
-    }
+int rfc6479_check_replay_window(struct rfc6479_window *w, uint64_t sequence_number) {
+    uint32_t bit_location;
+    uint32_t index;
 
-    /**
-     * first == 0 or wrapped
-     */
-    if (sequence_number == 0)
-    {
-        return 0;
-    }
-
-    /**
-     * first check if the sequence number is in the range
-     */
-    if (sequence_number > ipsa->replaywin_lastseq)
-    {
+    /* first check if the sequence number is in the range */
+    if (sequence_number > w->replaywin_lastseq) {
         return 1; /** larger is always good */
     }
 
-    /**
-     * The packet is too old and out of the window
-     */
-    if ((sequence_number + ipsa->replaywin_size) <
-        ipsa->replaywin_lastseq)
-    {
+    /* The packet is too old and out of the window */
+    if ((sequence_number + REPLAY_WINDOW_SIZE) < w->replaywin_lastseq) {
         return 0;
     }
 
@@ -91,78 +75,51 @@ int ipsec_check_replay_window(struct ipsec_sa *ipsa,
     bit_location = sequence_number & BITMAP_LOC_MASK;
     index = (sequence_number >> REDUNDANT_BIT_SHIFTS) & BITMAP_INDEX_MASK;
 
-    /*
-     * this packet has already been received
-     */
-    if (ipsa->replaywin_bitmap[index] & (1 << bit_location))
-    {
+    /* this packet has already been received */
+    if (w->replaywin_bitmap[index] & (1 << bit_location)) {
         return 0;
     }
 
     return 1;
 }
 
-int ipsec_update_replay_window(struct ipsec_sa *ipsa,
-                               uint32_t sequence_number)
-{
-    int bit_location;
-    int index, index_cur, id;
-    int diff;
+int rfc6479_update_replay_window(struct rfc6479_window *w, uint64_t sequence_number) {
+    uint32_t bit_location;
+    uint32_t index, index_cur, id;
+    uint32_t diff;
 
-    if (ipsa->replaywin_size == 0)
-    { /** replay shut off */
-        return 1;
-    }
-
-    if (sequence_number == 0)
-    {
-        return 0; /** first == 0 or wrapped */
-    }
-
-    /**
-     * the packet is too old, no need to update
-     */
-    if ((ipsa->replaywin_size + sequence_number) <
-        ipsa->replaywin_lastseq)
-    {
+    // the packet is too old, no need to update
+    if ((sequence_number + REPLAY_WINDOW_SIZE) < w->replaywin_lastseq) {
         return 0;
     }
 
-    /**
-     * now update the bit
-     */
+    // now update the bit
     index = (sequence_number >> REDUNDANT_BIT_SHIFTS);
 
-    /**
-     * first check if the sequence number is in the range
-     */
-    if (sequence_number > ipsa->replaywin_lastseq)
-    {
-        index_cur = ipsa->replaywin_lastseq >> REDUNDANT_BIT_SHIFTS;
+    // first check if the sequence number is in the range
+    if (sequence_number > w->replaywin_lastseq) {
+        index_cur = w->replaywin_lastseq >> REDUNDANT_BIT_SHIFTS;
         diff = index - index_cur;
-        if (diff > BITMAP_LEN)
-        { /* something unusual in this case */
+        if (diff > BITMAP_LEN) { /* something unusual in this case */
             diff = BITMAP_LEN;
         }
 
-        for (id = 0; id < diff; ++id)
-        {
-            ipsa->replaywin_bitmap[(id + index_cur + 1) & BITMAP_INDEX_MASK] = 0;
+        for (id = 0; id < diff; ++id) {
+            w->replaywin_bitmap[(id + index_cur + 1) & BITMAP_INDEX_MASK] = 0;
         }
 
-        ipsa->replaywin_lastseq = sequence_number;
+        w->replaywin_lastseq = sequence_number;
     }
 
     index &= BITMAP_INDEX_MASK;
     bit_location = sequence_number & BITMAP_LOC_MASK;
 
     /* this packet has already been received */
-    if (ipsa->replaywin_bitmap[index] & (1 << bit_location))
-    {
+    if (w->replaywin_bitmap[index] & (1 << bit_location)) {
         return 0;
     }
 
-    ipsa->replaywin_bitmap[index] |= (1 << bit_location);
+    w->replaywin_bitmap[index] |= (1 << bit_location);
 
     return 1;
 }
