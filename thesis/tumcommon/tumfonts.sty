@@ -1,0 +1,68 @@
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{tumfonts}[2016/05/22 TUM fonts]
+
+% -----------------------------------------------------------------------------
+% Loads fonts appropriate for both beamer and article using helvet. If the
+% package is loaded with the option 'serif', nimbusserif becomes the text font.
+% Math fonts are loaded to match the text font as good as we can.
+%
+% Load as first package in your document. Make sure that no other packages load
+% additional fonts afterwards.
+% -----------------------------------------------------------------------------
+
+\RequirePackage{lmodern}
+\RequirePackage[T1]{fontenc}
+\RequirePackage{helvet}
+\RequirePackage{trfsigns}	% for \laplace
+\RequirePackage{gensymb}	% for \degree
+\RequirePackage{textcomp}
+\RequirePackage{nicefrac}
+\RequirePackage{amsmath}
+\RequirePackage{amssymb}
+\RequirePackage{microtype}
+
+\newif\ifserif
+\seriffalse
+
+\DeclareOption{serif}{%
+	\seriftrue
+}
+\ProcessOptions*\relax
+
+\ifserif
+	% Nothing to do if your are fine with lmodern
+\else
+	\RequirePackage[tx]{sfmath}
+	\RequirePackage[scaled]{inconsolata}
+	\renewcommand{\familydefault}{\sfdefault}
+\fi
+
+\newcommand{\mathbit}[1]{\boldsymbol{#1}}
+
+
+% Font fixes ------------------------------------------------------------------
+\let\Tiny=\tiny %font scaling warnings in beamer mdoe
+
+\ifserif\relax\else
+	%fix font kerning for helvetica
+	\let\phv@prime\prime
+	\renewcommand{\prime}{^{\hskip.15ex\phv@prime}}
+
+	\newlength{\tumfonts@tmplen}
+	\let\phv@hat\hat
+	\renewcommand{\hat}[1]{%
+		\setlength{\tumfonts@tmplen}{\widthof{#1}}%
+		\addtolength{\tumfonts@tmplen}{\heightof{#1}}%
+		\setlength{\tumfonts@tmplen}{.1\tumfonts@tmplen}%
+		\kern\tumfonts@tmplen\phv@hat{\kern-\tumfonts@tmplen#1}%
+	}
+	\let\phv@overline\overline
+	\renewcommand{\overline}[1]{%
+		\setlength{\tumfonts@tmplen}{\widthof{#1}}%
+		\addtolength{\tumfonts@tmplen}{\heightof{#1}}%
+		\setlength{\tumfonts@tmplen}{.15\tumfonts@tmplen}%
+		\kern\tumfonts@tmplen\phv@overline{\kern-\tumfonts@tmplen#1}%
+	}
+\fi
+
+\endinput

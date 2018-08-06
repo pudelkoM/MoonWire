@@ -1,0 +1,58 @@
+\documentclass[NET,11pt,a4paper,twoside,openright,dissertation,english]{tumthesis}
+
+% Include common packages
+\usepackage{packages}
+
+% Needed for Bachelor's theses, Master's theses and IDP
+\titleenglish{Link Layer Network Coding in Wireless Networks}
+\titlegerman{Link Layer Network Coding in Kabellosen Netzwerken}
+\author{Stephan~Matthias~G\"unther}
+\supervisor{\chairhead}
+\advisor{Prof.~Dr.-Ing.~Wolfgang~Utschick}
+%\date{29.\ Juni 2016}
+
+\def\pagestapleheight{10mm}
+
+\geometry{%
+	paperheight=320mm,
+	paperwidth=450mm,
+	left=0mm,
+	right=0mm,
+	top=0mm,
+	bottom=0mm,
+	head=0mm,
+	includehead=false,
+	footskip=0mm,
+}
+
+\begin{document}%
+
+% Makes sure that same author names are not replaced by dahes
+\pagenumbering{gobble}
+
+\makeatletter
+\hfill
+\fbox{%
+\begin{minipage}{\pagestapleheight}%
+	\centering
+	\rotatebox{-90}{%
+			\@author\mdash{}\thetitle
+	}
+\end{minipage}%
+}%
+\fbox{%
+\begin{minipage}[c][297mm][c]{210mm}
+	\centering
+	\begin{minipage}[c]{160mm}
+		\setlength{\parskip}{.5\baselineskip}
+		\maketitle*%
+	\end{minipage}%
+\end{minipage}%
+}%
+\makeatother
+
+\vspace*{\fill}
+
+\end{document}
+
+

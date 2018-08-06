@@ -1,0 +1,31 @@
+% theorems and proofs
+\newtheoremstyle{reportitalic}%
+    {2ex}{2ex}{\normalfont\renewcommand\em\upshape\itshape}{}%
+    {\normalfont\scshape}{.}{1em}{}
+\newtheoremstyle{reportnormal}%
+    {2ex}{2ex}{\normalfont}{}%
+    {\normalfont\scshape}{.}{1em}{}
+\theoremstyle{reportitalic}
+\newtheorem{definition}{Definition}[chapter]
+\newtheorem{theorem}{Theorem}[chapter]
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{lemma}[theorem]{Lemma}
+\theoremstyle{reportnormal}
+\newtheorem{example}{Example}[chapter]
+\newtheorem{remark}{Remark}[chapter]
+
+% theorem enumerates
+\newenvironment{thmenum}{\begin{enumerate}
+    \setlength\itemsep{.2ex}
+    \setlength\parsep{0pt}
+    \setlength\parskip{0pt}
+    \renewcommand\theenumi{\alph{enumi}}
+    \renewcommand\labelenumi{(\theenumi)}
+    \vskip -\topsep\vskip .2ex\vskip 0pt
+}{\end{enumerate}}
+
+% proof reference of theorem enumerates
+\newcommand\proofrefskip{\hskip 1em\relax}
+\newcommand\proofref[1]{(\ref{#1})}
+

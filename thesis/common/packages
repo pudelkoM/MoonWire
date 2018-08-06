@@ -1,0 +1,33 @@
+\usepackage[utf8x]{inputenc}
+\usepackage{cite}
+\usepackage{moeptikz}
+\usepackage{mathtools}
+\usepackage{graphicx}
+\usepackage{sfmath}
+
+\usepackage[binary-units, output-decimal-marker={,}]{siunitx}
+\sisetup{
+    output-decimal-marker=\text{,},
+    detect-all=true,
+    per-mode=fraction
+}
+
+\DeclareMathAlphabet{\mathbit}{OML}{cmr}{bx}{it}
+\DeclareMathAlphabet{\mathsf}{OT1}{cmss}{m}{n}
+\DeclareMathAlphabet{\mathbsf}{OT1}{cmss}{bx}{it}
+
+\newcommand{\bcal}[1]{\boldsymbol{\cal #1}}
+\newcommand{\brandom}{\mathbsf}
+\newcommand{\random}{\mathsf}
+
+\newcommand{\fixme}[1]{\textcolor{red}{[#1]}}
+\newcommand{\pr}[1]{\operatorname{Pr}\left [ #1\right ]}
+\newcommand{\opn}[1]{\operatorname{#1}}
+\newcommand{\C}[1]{\mathcal{#1}}
+\newcommand{\BB}[1]{\mathbb{#1}}
+\newcommand{\B}[1]{\mathbit{#1}}
+
+%\pgfplotsset{compat=1.10}
+%\pgfplotsset{colormap={moepcolormap}{[1cm] color(0cm)=(black!60) color(5cm)=(black!1)}}
+%\pgfplotsset{colormap={moepcolormap}{[1cm] color(0cm)=(TUMDarkerBlue) color(1cm)=(TUMLighterBlue) color(2cm)=(TUMGreen) color(3cm)=(TUMBeamerYellow) color(4cm)=(TUMOrange) color(5cm)=(I8LogoRed)}}
+

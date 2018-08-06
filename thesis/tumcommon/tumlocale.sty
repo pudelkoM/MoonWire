@@ -1,0 +1,24 @@
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{tumlocale}[2016/07/06 TUM localizations]
+
+\newcommand{\localetext}[2]{\iflanguage{ngerman}{#2}{#1}}
+\newcommand{\localemacro}[3]{%
+	\ifdefined\captionsenglish
+		\addto\captionsenglish{\def#1{#2}}%
+		\addto\captionsngerman{\def#1{#3}}%
+	\else
+		\AtBeginDocument{%
+			\addto\captionsenglish{\def#1{#2}}%
+			\addto\captionsngerman{\def#1{#3}}%
+		}%
+	\fi
+}
+
+\localemacro{\examname}{Examination}{Pr\"ufung}
+\localemacro{\datename}{Date}{Datum}
+\localemacro{\contentname}{Content}{Inhalt}
+\localemacro{\examinername}{Examiner}{Pr\"ufer}
+\localemacro{\assistantname}{Assistant}{\"Ubungsleiter}
+\localemacro{\assistantsname}{Assistants}{\"Ubungsleiter}
+
+\endinput

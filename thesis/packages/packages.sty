@@ -1,0 +1,356 @@
+\usepackage{etex}
+
+% Font configuration ---------------------------------------------------------
+\usepackage{oldgerm}
+\usepackage{lmodern}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath}
+\usepackage{amssymb}
+%\usepackage[babel,tracking=false,spacing=true]{microtype}
+%\DisableLigatures[f]{encoding=*,family=*}
+
+\usepackage{upgreek}
+
+%\usepackage[%
+%	rm={lining=false}%
+%]{cfr-lm}
+
+% drawing and graphics -------------------------------------------------------
+\usepackage{tumcolor}
+\usepackage{tikz}
+\usepackage{moeptikz}
+\usepackage{tikzstyles}
+% ----------------------------------------------------------------------------
+
+% pgfplots -------------------------------------------------------------------
+\usepackage{pgfplots}
+\pgfplotsset{compat=newest}
+\pgfplotsset{colormap={moepcolormap}{[1cm] color(0cm)=(black!40) color(5cm)=(black!1)}}
+%\pgfplotsset{colormap={moepcolormap}{[1cm] color(0cm)=(TUMDarkerBlue)
+%color(1cm)=(TUMLighterBlue) color(2cm)=(TUMGreen) color(3cm)=(TUMYellow)
+%color(4cm)=(TUMOrange) color(5cm)=(TUMRed)}}
+% ----------------------------------------------------------------------------
+
+
+% misc packages
+\usepackage{siunitx}
+\sisetup{%
+	per-mode = symbol-or-fraction,
+	math-micro = \ensuremath\mu,
+%	text-rm=\fontsize{.9em}{1em}\selectfont,
+}
+\DeclareSIUnit\byte{B}
+\DeclareSIUnit\bit{bit}
+\DeclareSIUnit\packets{packets}
+\DeclareSIUnit\packet{packet}
+\DeclareSIUnit\pps{pps}
+\DeclareBinaryPrefix\kibi{Ki}{10}
+\DeclareBinaryPrefix\mebi{Mi}{20}
+\DeclareBinaryPrefix\gibi{Gi}{30}
+\DeclareBinaryPrefix\tibi{Ti}{40}
+
+
+\usepackage{listings}
+\lstset{basicstyle=\scriptsize\linespread{1}\ttfamily,
+	numberstyle=\scriptsize\color{gray},
+	numbers=left,
+	frame=lines,
+	framerule=.5pt,
+	belowcaptionskip=3pt,
+	language=c,
+	keywordstyle=\color{TUMDarkerBlue},
+	commentstyle=\color{black!60},
+	otherkeywords={u8,size_t,uint8_t,uint64_t,v4df,v8sf},
+}
+
+\let\Tiny=\tiny
+% ----------------------------------------------------------------------------
+
+
+%% Document commands
+%\newcommand\showmathalphabet{\noindent\begin{tabular}{ll}
+%    textnormal  & abcdefghijklmnopqrstuvwxyz\\
+%                & ABCDEFGHIJKLMNOPQRSTUVWXYZ\\
+%				& 1234567890\\
+%    textit      & \textit{abcdefghijklmnopqrstuvwxyz}\\
+%                & \textit{ABCDEFGHIJKLMNOPQRSTUVWXYZ}\\
+%				& \textit{1234567890}\\
+%    mathnormal  & $abcdefghijklmnopqrstuvwxyz$\\
+%                & $ABCDEFGHIJKLMNOPQRSTUVWXYZ$\\
+%				& $1234567890$\\
+%		& $\alpha\beta\gamma\delta\epsilon\zeta\eta\theta\kappa\lambda\mu\nu\xi\pi\rho\sigma\tau\phi\chi\psi\omega$\\
+%%		& $\otheralpha\otherbeta\othergamma\otherdelta\otherepsilon\otherzeta\othereta\othertheta\otherkappa\otherlambda\othermu\othernu\otherxi\otherpi\otherrho\othersigma\othertau\otherphi\otherchi\otherpsi\otheromega$\\
+%		& $\Gamma\Delta\Lambda\Pi\Phi\Psi\Omega$\\
+%%		& $\otherGamma\otherDelta\otherLambda\otherPi\otherPhi\otherPsi\otherOmega$\\
+%    mathbit     & $\mathbit{abcdefghijklmnopqrstuvwxyz}$\\
+%                & $\mathbit{ABCDEFGHIJKLMNOPQRSTUVWXYZ}$\\
+%				& $\mathbit{1234567890}$\\
+%		& $\mathbit{\alpha\beta\gamma\delta\epsilon\zeta\eta\theta\kappa\lambda\mu\nu\xi\pi\rho\sigma\tau\phi\chi\psi\omega}$\\
+%%		& $\mathbit{\otheralpha\otherbeta\othergamma\otherdelta\otherepsilon\otherzeta\othereta\othertheta\otherkappa\otherlambda\othermu\othernu\otherxi\otherpi\otherrho\othersigma\othertau\otherphi\otherchi\otherpsi\otheromega}$\\
+%		& $\mathbit{\Gamma\Delta\Lambda\Pi\Phi\Psi\Omega}$\\
+%%		& $\mathbit{\otherGamma\otherDelta\otherLambda\otherPi\otherPhi\otherPsi\otherOmega}$\\
+%    mathfrak    & $\mathfrak{abcdefghijklmnopqrstuvwxyz}$\\
+%                & $\mathfrak{ABCDEFGHIJKLMNOPQRSTUVWXYZ}$\\
+%    mathcal     & $\mathcal{ABCDEFGHIJKLMNOPQRSTUVWXYZ}$\\
+%    scshape      & \scshape{abcdefghijklmnopqrstuvwxyz}\\
+%%    mathscr     & $\mathscr{ABCDEFGHIJKLMNOPQRSTUVWXYZ}$\\
+%%    matheus     & $\matheus{ABCDEFGHIJKLMNOPQRSTUVWXYZ}$\\
+%\end{tabular}}
+
+\newcommand\mathbit[1]{\boldsymbol{#1}}
+%\newcommand\opn[1]{\operatorname{#1}}
+\newcommand{\suchthat}[2]{%
+#1\,\mid\,#2%
+}
+%\newcommand{\expect}[1]{\opn{E}\left[#1\right]}
+%\newcommand{\var}[1]{\opn{Var}\left[#1\right]}
+%\newcommand{\mathbit}[1]{\mathbf{#1}}
+%\newcommand{\fixme}[1]{\textcolor{red}{[FIXME: #1]}}
+
+%\newcommand{\pd@part}[2]{#1\hskip-.25ex#2\hskip.15ex}%
+%\def\pd{\@ifstar{\pd@part{\hskip.3ex\partial}}{\pd@part{\hskip.2ex\opn{d}}}}
+%\newcommand{\pd}[1]{\opn{d}\hskip-.4ex#1\hskip.15ex}%
+%\newcommand{\code}[1]{\texttt{#1}}
+\protected\def\iid{%
+	\@ifnextchar,%
+	{i.\,i.\,d.}%
+	{i.\,i.\,d.\ }%
+}
+
+
+% \sc*[skip]{text}[arg1][arg2]
+%
+% Prints 'text' as fake-smallcaps, i.e., the font size is reduced by 15%. If
+% 'arg1' is given, a quarter space in inserted between 'text' and 'arg1', and
+% 'arg1' is typeset with a font 10% smaller than the current font.
+%
+% If 'arg2' is given, behavior is the same but between 'arg1' and 'arg2' a long
+% dash is inserted at 100% of the current font. This variant can be considered
+% as a range of values, e.g. \sc{MyUNIT}[0][42].
+%
+% By default a white space is inserted after the last literal using the xspace
+% packge. If the starred version of the command ist used, a trailing white
+% space is suppressed.
+%
+% The 'skip' option allows to override the default white space between 'text'
+% and 'arg1'. Note that the white space is only printed if both 'text' and
+% 'arg1' are not empty.
+
+\protected\def\pr#1{%
+	\@ifnextchar[%
+	{\pr@i{#1}}%
+	{\pr@i{#1}[]}%
+}
+\protected\def\pr@i#1[#2]{%
+	\opn{Pr}\left[#1\ifx\@empty#2\@empty\relax\else\,|\,#2\fi\right]%
+}
+
+\usepackage{xstring}
+
+\RequirePackage{xspace}
+\protected\def\sc{%
+	\@ifstar%
+	{\sc@i{1}}%
+	{\sc@i{0}}%
+}
+\protected\def\sc@i#1{%
+	\@ifnextchar[%
+	{\sc@ii{#1}}%
+	{\sc@ii{#1}[]}%
+}
+\protected\def\sc@ii#1[#2]#3{%
+	\@ifnextchar<%
+	{\sc@iii{#1}{#2}{#3}}%
+	{\sc@iii{#1}{#2}{#3}<>}%
+}
+\protected\def\sc@iii#1#2#3<#4>{%
+	\@ifnextchar[%
+	{\sc@iv{#1}{#2}{#3}{#4}}%
+	{\sc@iv{#1}{#2}{#3}{#4}[]}%
+}
+\protected\def\sc@iv#1#2#3#4[#5]{%
+	\@ifnextchar[%
+	{\sc@v{#1}{#2}{#3}{#4}{#5}}%
+	{\sc@v{#1}{#2}{#3}{#4}{#5}[]}%
+}
+\protected\def\sc@v#1#2#3#4#5[#6]{%
+	\ifx\@empty#3\@empty\relax\else%
+		{\text{\fontsize{0.95em}{1em}\selectfont#3}}%
+	\fi%
+	\ifx\@empty#4\@empty\relax\else%
+		{\text{\fontsize{1em}{1em}\selectfont#4}}%
+	\fi%
+	\ifx\@empty#5\@empty\relax\else%
+		\ifx\@empty#3\@empty\relax\else%
+			\ifx\@empty#2\@empty%
+				\,%
+			\else%
+				\hspace{#2}%
+			\fi%
+		\fi%
+		{\text{\fontsize{1em}{1em}\selectfont#5}}%
+	\fi%
+	\ifx\@empty#6\@empty\relax\else%
+		\,--%
+		{\text{\,\fontsize{1em}{1em}\selectfont#6}}%
+	\fi%
+	\ifnum#1=0\relax%
+		\xspace%
+	\fi%
+}
+
+%\newcommand{\eg}{e.\,g.\ }
+%\newcommand{\ie}{i.\,e., }
+\renewcommand{\tt}[1]{%
+	{\text{\fontsize{0.9em}{1em}\selectfont\ttfamily#1}}%
+}
+\newcommand{\moep}[2][]{%
+	{\fontsize{0.90em}{1em}\selectfont MOEP\,}%
+	{\fontsize{0.95em}{1em}\selectfont#2#1}%
+}
+\protected\def\gf{%
+	\@ifnextchar[%
+	{\gf@i}%
+	{\gf@i[]}%
+}
+\protected\def\gf@i[#1]{%
+	\ifx\@empty#1@empty%
+		\mbox{\sc{GF}}%
+	\else%
+		\mbox{\sc[0pt]{GF}[(#1)]}%
+	\fi%
+}
+\def\intel{Intel\xspace}
+
+\newcommand{\mdash}{%
+	\,---\,%
+}
+\newcommand{\sdash}{%
+	\,--\,%
+}
+\newcommand{\wmewma}{%
+	\text{\sc*{WM}-\sc{EWMA}{}}%
+}
+\newcommand{\mewma}{%
+	\text{\sc*{M}-\sc{EWMA}{}}%
+}
+
+
+\newcommand{\nidx}{%
+	\ensuremath{n}%
+}
+\newcommand{\kidx}{%
+	\ensuremath{k}%
+}
+\newcommand{\tauidx}{%
+	\ensuremath{\uptau}%
+}
+%\renewcommand{\emph}[1]{%
+%	\textsl{#1}%
+%}
+\newcommand{\faulhaber}[2]{%
+	F^{#2}_{#1}%
+}
+\newcommand{\etal}{%
+	et al.\ %
+}
+\def\nodes{%
+	\ensuremath{\mathcal V}%
+}
+\def\arcs{%
+	\ensuremath{\mathcal A}%
+}
+\def\txw{%
+	\@ifnextchar[%
+	{\txw@i}%
+	{\txw@i[]}
+}
+\def\txw@i[#1]{%
+	\@ifnextchar[%
+	{\txw@ii{#1}}%
+	{\txw@ii{#1}[]}%
+}
+\def\txw@ii#1[#2]{%
+	\ensuremath{\mathfrak w_{#1}^{#2}}%
+}
+\newcommand{\flow}[2]{%
+	\ensuremath{(#1#2)}%
+}
+\def\txc{%
+	\@ifnextchar[%
+	{\txc@i}%
+	{\txc@i[]}
+}
+\def\txc@i[#1]{%
+	\@ifnextchar[%
+	{\txc@ii{#1}}%
+	{\txc@ii{#1}[]}%
+}
+\def\txc@ii#1[#2]{%
+	\ensuremath{\mathfrak c_{#1}^{#2}}%
+}
+\def\ptime#1#2{%
+	t_{#1}^{\sc{#2}}%
+}
+\def\ipt{%
+	\@ifnextchar[%
+	{\ipt@i}%
+	{\ipt@i[]}%
+}
+\def\ipt@i[#1]#2#3{%
+	\ifx\@empty#1\@empty%
+		\tau_{#2}^{\sc{#3}}%
+	\else%
+		\csname#1\endcsname\tau_{#2}^{\sc{#3}}%
+	\fi%
+}
+\def\ipdv{%
+	\@ifnextchar[%
+	{\ipdv@i}%
+	{\ipdv@i[]}%
+}
+\def\ipdv@i[#1]#2#3{%
+	\ifx\@empty#1\@empty%
+		\nu_{#2}^{\sc{#3}}%
+	\else%
+		\csname#1\endcsname\nu_{#2}^{\sc{#3}}%
+	\fi%
+}
+\def\delay{%
+	\@ifnextchar[%
+	{\delay@i}%
+	{\delay@i[]}%
+}
+\def\delay@i[#1]#2{%
+	\ifx\@empty#1\@empty%
+		\delta_{#2}%
+	\else%
+		\csname#1\endcsname\delta_{#2}%
+	\fi%
+}
+\newcommand{\libname}[1]{%
+	{\slshape #1}%
+}
+\newcommand{\layer}[2]{%
+	\sc*{L}<#2>-\sc{#2}%
+}
+
+
+
+\def\softmac{\sc*{}[Soft]\sc{MAC}}
+\def\fullmac{\sc*{}[Full]\sc{MAC}}
+\def\ampdu{\sc*{A}-\sc*{MPDU}}
+\def\cloudmac{\sc*{}[Cloud]\sc{MAC}}
+\def\openflow{\sc{}[OpenFlow]}
+\def\clickrouter{\libname{Click Modular Router}\xspace}
+\def\roofnet{\libname{roofnet}\xspace}
+\def\xachtsechs{x86\xspace}
+\def\xachtsechssechsvier{x86-64\xspace}
+\def\intel{Intel\xspace}
+\def\intelcore#1#2{\intel{} Core \sc*{}[#1]-\sc*{}[#2]\xspace}
+\def\armcortex#1#2#3{\sc{#1}[#2\,#3]}
+\def\odroid{\sc*{ODROID}-\sc{XU}[Lite]}
+\def\shufflealgo{\sc{SHUFFLE}}
+% ----------------------------------------------------------------------------
+
