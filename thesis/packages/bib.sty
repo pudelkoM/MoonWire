@@ -1,0 +1,77 @@
+\usepackage[autostyle]{csquotes}
+
+% Do not skip any authors in the bibliography. This does not apply to citation
+% labels.
+% ----------------------------------------------------------------------------
+\ExecuteBibliographyOptions{%
+	maxbibnames=99,
+}
+% ----------------------------------------------------------------------------
+
+% Set penalties to avoid ugly line breaks in URLs
+% ----------------------------------------------------------------------------
+\setcounter{biburlnumpenalty}{1}
+\setcounter{biburlucpenalty}{1}
+\setcounter{biburllcpenalty}{1}
+% ----------------------------------------------------------------------------
+
+% Supress specific fields in all labels
+% ----------------------------------------------------------------------------
+\AtEveryBibitem{%
+	\clearname{translator}%
+	\clearlist{publisher}%
+	\clearfield{pagetotal}%
+}
+% ----------------------------------------------------------------------------
+
+% Define default citation labels:
+% Display up to two authors (first two letters of lastname) followed by the
+% publication's year in four-digit format.
+% ----------------------------------------------------------------------------
+\renewcommand{\labelalphaothers}{}
+\DeclareLabelalphaTemplate{
+	\labelelement{
+		\field[strwidth=2,strwidthmax=4,pstrwidth=2,strside=left,names=1-2]{labelname}
+	}
+	\labelelement{
+		\field[strwidth=2,strside=right]{year}
+	}
+}
+% ----------------------------------------------------------------------------
+
+% Label 'manual' used for technical documents such as IEEE standards and
+% technical specifications of manufacturers such as Intel/ARM. The citation
+% label consists of the editor (company name) followed by the year in
+% four-digit format.
+% ----------------------------------------------------------------------------
+\DeclareLabelname[manual]{
+	\field{editor}
+}
+\DeclareBibliographyDriver{manual}{%
+	\printfield{title}%
+	\newunit\newblock
+	\printlist{organization}%
+	\newunit\newblock
+	\printfield{year}%
+	\finentry%
+}
+\DeclareLabelalphaTemplate[manual]{
+	\labelelement{
+		\field[strside=left,names=1]{labelname}
+	}
+	\labelelement{
+		\field[strwidth=2,strside=right]{year}
+	}
+}
+% ----------------------------------------------------------------------------
+
+% Specifies how the bibliography is displayed.
+% ----------------------------------------------------------------------------
+\defbibheading{bibintoc}[Bibliography]{%
+	\chapter*{\scshape#1}\markboth{}{}%
+	\def\chaptertitle{#1}%
+	\addcontentsline{toc}{chapter}{#1}%
+	\pagestyle{thesisbibliography}%
+}
+% ----------------------------------------------------------------------------
+

@@ -1,0 +1,78 @@
+\DeclareAcroListStyle{longtabu}{table}{%
+	table = longtabu,
+	table-spec = @{}>{}lX@{}
+}{%
+
+\acsetup{%
+	list-style=longtabu,
+	extra-style=plain,	% remove dot after long in list
+	only-used=false,
+}
+
+\tabulinesep=1ex
+
+\DeclareAcronym{iso}{
+	short				= {\sc{ISO}},
+	long				= {International Organization for Standardization},
+	list				= {\acl{iso}.},
+}
+\DeclareAcronym{osi}{
+	short				= {\sc{OSI}},
+	long				= {Open Systems Interconnection},
+	list				= {\acl{osi}.},
+	extra				= {%
+		Reference model for layered network architectures by the \ac{osi}.
+	},
+}
+\DeclareAcronym{pdu}{
+	short				= {\sc{PDU}},
+	short-plural-form	= {\sc*{PDU}s},
+	long				= {protocol data unit},
+	long-plural-form	= {protocol data units},
+	list				= {\Acl{pdu}.},
+	extra				= {%
+	Refers to a message at a specific layer of the \acs{osi} model including
+	all headers and trailers of the respective layer and all layers above.
+	},
+}
+\DeclareAcronym{sdu}{
+	short				= {\sc{SDU}},
+	short-plural-form	= {\sc*{SDU}s},
+	long				= {service data unit},
+	long-plural-form	= {service data units},
+	list				= {\Acl{sdu}.},
+	extra				= {%
+		Refers to the payload of a message at a specific layer of the \acs{osi}
+		model excluding all headers and trailers of the respective layer.
+	},
+}
+\DeclareAcronym{mac}{
+	short				= {\sc{MAC}},
+	long				= {medium access control},
+	list				= {\Acl{mac}.},
+}
+\DeclareAcronym{tcp}{
+	short				= {\sc{TCP}},
+	long				= {transmission control protocol},
+	list				= {\Acl{tcp}.},
+	extra				= {%
+		Stream-oriented, reliable, transport layer protocol.
+	}
+}
+\DeclareAcronym{udp}{
+	short				= {\sc{UDP}},
+	long				= {user datagram protocol},
+	list				= {\Acl{udp}.},
+	extra				= {%
+		Datagram-oriented, unreliable transport layer protocol.
+	}
+}
+\DeclareAcronym{sctp}{
+	short				= {\sc{SCTP}},
+	long				= {Stream Control Transmission Protocol},
+	list				= {\acs{sctp}.},
+	extra				= {%
+		Datagram-oriented, semi-reliable transport layer protocol.
+	}
+}
+

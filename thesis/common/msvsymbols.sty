@@ -1,0 +1,70 @@
+%
+% msvsymbols.sty --- Extra math symbols
+%
+% Additional symbol definitions beyond latex and amstex
+% most of the symbols are taken from txfonts
+%
+%----------------------------------------------------------------------
+% USAGE
+%
+%   \usepackage{msvsymbols}
+%
+%   \vartransformcirc        Fourier transform
+%   \vartransformbullet      Fourier transform
+%   \vartransform            Fourier transform
+%   \vartransforminv         Fourier transform
+%   \vartransformvertcirc    Fourier transform vertical
+%   \vartransformvertbullet  Fourier transform vertical
+%   \vartransformvertinv     Fourier transform vertical
+%   \vartransformvert        Fourier transform vertical
+%
+%   \varbigtimessmall        Small extensible version of \times
+%   \varbigtimes             Large extensible version of \times
+%
+
+
+%----------------------------------------------------------------------
+% Identify package
+%
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{msvsymbols}%
+    [2012/09/27 v0.03.3 %
+    msvsymbols.sty Provides additional math symbols mostly from txfonts]
+
+%----------------------------------------------------------------------
+% Font definitions
+%
+% Math Symbols A (MSAM)
+\DeclareSymbolFont{varAMSa}{U}{txsya}{m}{n}
+\SetSymbolFont{varAMSa}{bold}{U}{txsya}{bx}{n}
+% Math Symbols B (MSBM) %
+\DeclareSymbolFont{varAMSb}{U}{txsyb}{m}{n}
+\SetSymbolFont{varAMSb}{bold}{U}{txsyb}{bx}{n}
+% Math Symbols C %
+\DeclareSymbolFont{varsymbolsC}{U}{txsyc}{m}{n}
+\SetSymbolFont{varsymbolsC}{bold}{U}{txsyc}{bx}{n}
+% Math Extension %
+\DeclareSymbolFont{varlargesymbols}{OMX}{txex}{m}{n}
+\SetSymbolFont{varlargesymbols}{bold}{OMX}{txex}{bx}{n}
+% Math Extension A %
+\DeclareSymbolFont{varlargesymbolsA}{U}{txexa}{m}{n}
+\SetSymbolFont{varlargesymbolsA}{bold}{U}{txexa}{bx}{n}
+
+
+%----------------------------------------------------------------------
+% Define names for some additional symbols
+%
+% Fourier transform
+\DeclareMathSymbol{\vartransformcirc}{\mathrel}{varsymbolsC}{"13}
+\DeclareMathSymbol{\vartransformbullet}{\mathrel}{varsymbolsC}{"16}
+\DeclareMathSymbol{\vartransform}{\mathrel}{varsymbolsC}{"17}
+\DeclareMathSymbol{\vartransforminv}{\mathrel}{varsymbolsC}{"18}
+\DeclareMathSymbol{\vartransformvertcirc}{\mathrel}{varsymbolsC}{"95}
+\DeclareMathSymbol{\vartransformvertbullet}{\mathrel}{varsymbolsC}{"96}
+\DeclareMathSymbol{\vartransformvertinv}{\mathrel}{varsymbolsC}{"97}
+\DeclareMathSymbol{\vartransformvert}{\mathrel}{varsymbolsC}{"98}
+% Extensible times
+\DeclareMathSymbol{\varbigtimessmall}{\mathop}{varlargesymbolsA}{"10}
+\DeclareMathSymbol{\varbigtimes}{\mathop}{varlargesymbolsA}{"11}
+
+

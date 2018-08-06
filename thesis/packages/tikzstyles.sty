@@ -1,0 +1,29 @@
+\usetikzlibrary{calc,arrows,matrix,positioning,shapes.multipart,shapes.geometric}
+
+% commutative diagram
+\tikzstyle{commutative diagram}=[matrix of math nodes,
+    matrix anchor=m-1-1.base,anchor=base,
+    row sep=3em,column sep=4em,
+    minimum width=3em,minimum height=2em]
+\tikzstyle{commutative edge}=[]
+\tikzstyle{map}=[commutative edge,->]
+\tikzstyle{injective map}=[commutative edge,right hook->]
+\tikzstyle{surjective map}=[commutative edge,->>]
+\tikzstyle{bijective map}=[commutative edge,right hook->>]
+
+% broadcast diagrams
+\tikzstyle{wireless}=[draw,thick,circle,
+    minimum size=5.5mm,inner sep=0mm,font=\small]
+\tikzstyle{virtual}=[draw,thick,rectangle,
+    minimum size=5.5mm,inner sep=0mm,font=\small]
+\tikzstyle{arc}=[draw,thick,->]
+\tikzstyle{rate}=[pos=.5,above,sloped,font=\small]
+\tikzstyle{broadcast}=[draw,thin,dashed]
+\tikzstyle{broadcast rate}=[font=\small]
+\tikzstyle{cut}=[draw,thick]
+
+% Markov chains
+\newcommand\clamp[1]{\raisebox{0pt}[0pt][0pt]{\makebox[0pt][c]{#1}}}
+\newcommand\clampwd[1]{\raisebox{0pt}[\height][0pt]{\makebox[0pt][c]{#1}}}
+\newcommand\clamphd[1]{\raisebox{0pt}[0pt][0pt]{\makebox[\width][c]{#1}}}
+

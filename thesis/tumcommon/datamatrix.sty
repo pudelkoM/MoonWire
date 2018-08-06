@@ -1,0 +1,677 @@
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{datamatrix}[2016/04/01 Data Matrix codes]
+
+% Copyright 2016		Maurice Leclaire <leclaire@in.tum.de>
+%
+% This program is free software; you can redistribute it and/or modify
+% it under the terms of the GNU General Public License version 2 as
+% published by the Free Software Foundation.
+%
+% See COPYING for more details.
+%
+% This program is distributed in the hope that it will be useful,
+% but WITHOUT ANY WARRANTY; without even the implied warranty of
+% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+% GNU General Public License for more details.
+%
+% You should have received a copy of the GNU General Public License
+% along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+
+\RequirePackage{tikz}
+
+
+\newcount\datamatrix@modcnt
+\newcommand{\datamatrix@mod}[2]{%
+	\datamatrix@modcnt #1%
+	\advance\datamatrix@modcnt #2%
+	\divide\datamatrix@modcnt #2%
+	\multiply\datamatrix@modcnt #2%
+	\multiply\datamatrix@modcnt -1%
+	\advance\datamatrix@modcnt #1%
+	\advance\datamatrix@modcnt #2%
+	\relax%
+}
+
+\newcount\datamatrix@xorcnt
+\newcount\datamatrix@xorcntone
+\newcount\datamatrix@xorcnttwo
+\newcount\datamatrix@xorcnttmp
+\newcommand{\datamatrix@xor}[2]{%
+	\datamatrix@xorcntone #1%
+	\datamatrix@xorcnttwo #2%
+	\foreach\bit in {0,...,15}{%
+		\datamatrix@xorcnttmp\datamatrix@xorcntone%
+		\advance\datamatrix@xorcnttmp\datamatrix@xorcnttwo%
+		\ifodd\datamatrix@xorcnttmp%
+			\global\advance\datamatrix@xorcnt 65536%
+		\fi%
+		\global\divide\datamatrix@xorcnt 2%
+		\global\divide\datamatrix@xorcntone 2%
+		\global\divide\datamatrix@xorcnttwo 2%
+	}%
+	\relax%
+}
+
+%\newcount\datamatrix@mulcnt
+%\newcount\datamatrix@mulcntone
+%\newcount\datamatrix@mulcnttwo
+%\newcount\datamatrix@mulcntmod
+%\newcount\datamatrix@mulcnttmp
+%\newcommand{\datamatrix@mul}[3]{%
+%	\datamatrix@mulcntone #1%
+%	\datamatrix@mulcnttwo #2%
+%	\datamatrix@mulcntmod #3%
+%	\datamatrix@mulcnt 0%
+%	\foreach\bit in {0,...,7}{%
+%		\global\multiply\datamatrix@mulcnt 2%
+%		\datamatrix@mulcnttmp\datamatrix@mulcnttwo%
+%		\multiply\datamatrix@mulcnttmp 2%
+%		\foreach\bit in {\bit,...,7}{%
+%			\global\divide\datamatrix@mulcnttmp 2%
+%		}%
+%		\ifodd\datamatrix@mulcnttmp%
+%			\datamatrix@xor{\datamatrix@mulcnt}{\datamatrix@mulcntone}%
+%			\global\datamatrix@mulcnt\datamatrix@xorcnt%
+%		\fi%
+%	}%
+%	\multiply\datamatrix@mulcntmod 128%
+%	\foreach\bit in {0,...,7}{%
+%		\datamatrix@mulcnttmp\datamatrix@mulcnt%
+%		\foreach\bit in {\bit,...,14}{%
+%			\global\divide\datamatrix@mulcnttmp 2%
+%		}%
+%		\ifodd\datamatrix@mulcnttmp%
+%			\datamatrix@xor{\datamatrix@mulcnt}{\datamatrix@mulcntmod}%
+%			\global\datamatrix@mulcnt\datamatrix@xorcnt%
+%		\fi%
+%		\global\divide\datamatrix@mulcntmod 2%
+%	}%
+%	\relax%
+%}
+
+\newcommand{\datamatrix@log}[1]{%
+	\ifcase#1
+	255 \or   0 \or   1 \or 240 \or   2 \or 225 \or 241 \or  53 \or   3 \or  38 \or 226 \or 133 \or 242 \or  43 \or  54 \or 210 \or%
+	  4 \or 195 \or  39 \or 114 \or 227 \or 106 \or 134 \or  28 \or 243 \or 140 \or  44 \or  23 \or  55 \or 118 \or 211 \or 234 \or%
+          5 \or 219 \or 196 \or  96 \or  40 \or 222 \or 115 \or 103 \or 228 \or  78 \or 107 \or 125 \or 135 \or   8 \or  29 \or 162 \or%
+	244 \or 186 \or 141 \or 180 \or  45 \or  99 \or  24 \or  49 \or  56 \or  13 \or 119 \or 153 \or 212 \or 199 \or 235 \or  91 \or%
+	  6 \or  76 \or 220 \or 217 \or 197 \or  11 \or  97 \or 184 \or  41 \or  36 \or 223 \or 253 \or 116 \or 138 \or 104 \or 193 \or%
+	229 \or  86 \or  79 \or 171 \or 108 \or 165 \or 126 \or 145 \or 136 \or  34 \or   9 \or  74 \or  30 \or  32 \or 163 \or  84 \or%
+	245 \or 173 \or 187 \or 204 \or 142 \or  81 \or 181 \or 190 \or  46 \or  88 \or 100 \or 159 \or  25 \or 231 \or  50 \or 207 \or%
+	 57 \or 147 \or  14 \or  67 \or 120 \or 128 \or 154 \or 248 \or 213 \or 167 \or 200 \or  63 \or 236 \or 110 \or  92 \or 176 \or%
+	  7 \or 161 \or  77 \or 124 \or 221 \or 102 \or 218 \or  95 \or 198 \or  90 \or  12 \or 152 \or  98 \or  48 \or 185 \or 179 \or%
+	 42 \or 209 \or  37 \or 132 \or 224 \or  52 \or 254 \or 239 \or 117 \or 233 \or 139 \or  22 \or 105 \or  27 \or 194 \or 113 \or%
+	230 \or 206 \or  87 \or 158 \or  80 \or 189 \or 172 \or 203 \or 109 \or 175 \or 166 \or  62 \or 127 \or 247 \or 146 \or  66 \or%
+	137 \or 192 \or  35 \or 252 \or  10 \or 183 \or  75 \or 216 \or  31 \or  83 \or  33 \or  73 \or 164 \or 144 \or  85 \or 170 \or%
+	246 \or  65 \or 174 \or  61 \or 188 \or 202 \or 205 \or 157 \or 143 \or 169 \or  82 \or  72 \or 182 \or 215 \or 191 \or 251 \or%
+	 47 \or 178 \or  89 \or 151 \or 101 \or  94 \or 160 \or 123 \or  26 \or 112 \or 232 \or  21 \or  51 \or 238 \or 208 \or 131 \or%
+	 58 \or  69 \or 148 \or  18 \or  15 \or  16 \or  68 \or  17 \or 121 \or 149 \or 129 \or  19 \or 155 \or  59 \or 249 \or  70 \or%
+	214 \or 250 \or 168 \or  71 \or 201 \or 156 \or  64 \or  60 \or 237 \or 130 \or 111 \or  20 \or  93 \or 122 \or 177 \or 150 \fi%
+}
+
+\newcommand{\datamatrix@alog}[1]{%
+	\ifcase#1
+	  1 \or   2 \or   4 \or   8 \or  16 \or  32 \or  64 \or 128 \or  45 \or  90 \or 180 \or  69 \or 138 \or  57 \or 114 \or 228 \or%
+	229 \or 231 \or 227 \or 235 \or 251 \or 219 \or 155 \or  27 \or  54 \or 108 \or 216 \or 157 \or  23 \or  46 \or  92 \or 184 \or%
+	 93 \or 186 \or  89 \or 178 \or  73 \or 146 \or   9 \or  18 \or  36 \or  72 \or 144 \or  13 \or  26 \or  52 \or 104 \or 208 \or%
+	141 \or  55 \or 110 \or 220 \or 149 \or   7 \or  14 \or  28 \or  56 \or 112 \or 224 \or 237 \or 247 \or 195 \or 171 \or 123 \or%
+	246 \or 193 \or 175 \or 115 \or 230 \or 225 \or 239 \or 243 \or 203 \or 187 \or  91 \or 182 \or  65 \or 130 \or  41 \or  82 \or%
+	164 \or 101 \or 202 \or 185 \or  95 \or 190 \or  81 \or 162 \or 105 \or 210 \or 137 \or  63 \or 126 \or 252 \or 213 \or 135 \or%
+	 35 \or  70 \or 140 \or  53 \or 106 \or 212 \or 133 \or  39 \or  78 \or 156 \or  21 \or  42 \or  84 \or 168 \or 125 \or 250 \or%
+	217 \or 159 \or  19 \or  38 \or  76 \or 152 \or  29 \or  58 \or 116 \or 232 \or 253 \or 215 \or 131 \or  43 \or  86 \or 172 \or%
+	117 \or 234 \or 249 \or 223 \or 147 \or  11 \or  22 \or  44 \or  88 \or 176 \or  77 \or 154 \or  25 \or  50 \or 100 \or 200 \or%
+	189 \or  87 \or 174 \or 113 \or 226 \or 233 \or 255 \or 211 \or 139 \or  59 \or 118 \or 236 \or 245 \or 199 \or 163 \or 107 \or%
+	214 \or 129 \or  47 \or  94 \or 188 \or  85 \or 170 \or 121 \or 242 \or 201 \or 191 \or  83 \or 166 \or  97 \or 194 \or 169 \or%
+	127 \or 254 \or 209 \or 143 \or  51 \or 102 \or 204 \or 181 \or  71 \or 142 \or  49 \or  98 \or 196 \or 165 \or 103 \or 206 \or%
+	177 \or  79 \or 158 \or  17 \or  34 \or  68 \or 136 \or  61 \or 122 \or 244 \or 197 \or 167 \or  99 \or 198 \or 161 \or 111 \or%
+	222 \or 145 \or  15 \or  30 \or  60 \or 120 \or 240 \or 205 \or 183 \or  67 \or 134 \or  33 \or  66 \or 132 \or  37 \or  74 \or%
+	148 \or   5 \or  10 \or  20 \or  40 \or  80 \or 160 \or 109 \or 218 \or 153 \or  31 \or  62 \or 124 \or 248 \or 221 \or 151 \or%
+	  3 \or   6 \or  12 \or  24 \or  48 \or  96 \or 192 \or 173 \or 119 \or 238 \or 241 \or 207 \or 179 \or  75 \or 150 \or   0 \fi%
+}
+
+\newcount\datamatrix@mulcnt
+\newcommand{\datamatrix@mul}[3]{%
+	\ifnum0=#1%
+		\datamatrix@mulcnt 0%
+	\else\ifnum0=#2%
+		\datamatrix@mulcnt 0%
+	\else%
+		\expandafter\datamatrix@mulcnt\datamatrix@log{#1}%
+		\expandafter\advance\expandafter\datamatrix@mulcnt\datamatrix@log{#2}%
+		\datamatrix@mod{\datamatrix@mulcnt}{255}%
+		\expandafter\datamatrix@mulcnt\datamatrix@alog{\datamatrix@modcnt}%
+	\fi\fi%
+}
+
+\newcommand{\datamatrix@split}[1]{%
+	\edef\datamatrix@splitstr{}%
+	\expandafter\datamatrix@spliti #1\relax%
+	\edef\datamatrix@splitstr{\expandafter\@secondoftwo\datamatrix@splitstr}%
+}
+\def\datamatrix@spliti{\@ifnextchar\relax{}{\datamatrix@splitii}}
+\def\datamatrix@splitii#1{\edef\datamatrix@splitstr{\datamatrix@splitstr,#1}\datamatrix@spliti}
+
+\def\datamatrix@listsplit[#1,#2]{%
+	\edef\datamatrix@listfirst{#1}%
+	\edef\datamatrix@listsecond{#2}%
+}
+
+\newcount\datamatrix@asciicnt
+\newcount\datamatrix@asciicnttmp
+\newcommand{\datamatrix@encodeascii}[1]{%
+	\edef\datamatrix@asciistr{}%
+	\datamatrix@asciicnt 0%
+	\foreach\x in #1{%
+		\expandafter\expandafter\expandafter\datamatrix@asciicnttmp\expandafter`\x%
+		\advance\datamatrix@asciicnttmp 1%
+		\global\edef\datamatrix@asciistr{\datamatrix@asciistr,\the\datamatrix@asciicnttmp}%
+		\global\advance\datamatrix@asciicnt 1%
+	}%
+	\edef\datamatrix@asciistr{\expandafter\@secondoftwo\datamatrix@asciistr}%
+}
+
+\def\datamatrix@sizetablesquare{%
+	8/8/8/8/3/5,%
+	10/10/10/10/5/7,%
+	12/12/12/12/8/10,%
+	14/14/14/14/12/12,%
+	16/16/16/16/18/14,%
+	18/18/18/18/22/18,%
+	20/20/20/20/30/20,%
+	22/22/22/22/36/24,%
+	24/24/24/24/44/28,%
+	28/28/14/14/62/36,%
+	32/32/16/16/86/42,%
+	36/36/18/18/114/48,%
+	40/40/20/20/144/56,%
+	44/44/22/22/174/68%
+}
+
+\def\datamatrix@sizetablerect{%
+	6/16/6/16/5/7,%
+	6/28/6/14/10/11,%
+	10/24/10/24/16/14,%
+	10/32/10/16/22/18,%
+	14/32/14/16/32/24,%
+	14/44/14/22/49/28,%
+}
+
+\newif\ifdatamatrix@square
+\newcount\datamatrix@datalen
+\newcommand{\datamatrix@size}{%
+	\ifdatamatrix@square%
+		\let\datamatrix@sizetable\datamatrix@sizetablesquare%
+	\else%
+		\let\datamatrix@sizetable\datamatrix@sizetablerect%
+	\fi%
+	\edef\datamatrix@datalen{0}%
+	\foreach\datamatrix@height/\datamatrix@width/\datamatrix@regionheight/\datamatrix@regionwidth/\datalen/\codelen in \datamatrix@sizetable{%
+		\ifnum\datamatrix@asciicnt>\datamatrix@datalen%
+			\global\edef\datamatrix@height{\datamatrix@height}%
+			\global\edef\datamatrix@width{\datamatrix@width}%
+			\global\edef\datamatrix@regionwidth{\datamatrix@regionwidth}%
+			\global\edef\datamatrix@regionheight{\datamatrix@regionheight}%
+			\global\edef\datamatrix@datalen{\datalen}%
+			\global\expandafter\expandafter\expandafter\let\expandafter\expandafter\expandafter\datamatrix@codefactor\expandafter\csname datamatrix@codefactor\codelen\endcsname%
+		\fi%
+	}%
+}
+
+\newcommand{\datamatrix@pad}{%
+	\ifnum\datamatrix@asciicnt<\datamatrix@datalen%
+		\edef\datamatrix@asciistr{\datamatrix@asciistr,129}%
+		\advance\datamatrix@asciicnt 1%
+		\loop\ifnum\datamatrix@asciicnt<\datamatrix@datalen%
+			\advance\datamatrix@asciicnt 1%
+			\datamatrix@asciicnttmp\datamatrix@asciicnt%
+			\multiply\datamatrix@asciicnttmp 149%
+			\datamatrix@mod{\datamatrix@asciicnttmp}{253}%
+			\datamatrix@asciicnttmp\datamatrix@modcnt%
+			\advance\datamatrix@asciicnttmp 130%
+			\datamatrix@mod{\datamatrix@asciicnttmp}{254}%
+			\edef\datamatrix@asciistr{\datamatrix@asciistr,\the\datamatrix@modcnt}%
+		\repeat%
+	\fi%
+}
+
+\expandafter\def\csname datamatrix@codefactor5\endcsname{62,111,15,48,228}
+\expandafter\def\csname datamatrix@codefactor7\endcsname{254,92,240,134,144,68,23}
+\expandafter\def\csname datamatrix@codefactor10\endcsname{61,110,255,116,248,223,166,185,24,28}
+\expandafter\def\csname datamatrix@codefactor11\endcsname{120,97,60,245,39,168,194,12,205,138,175}
+\expandafter\def\csname datamatrix@codefactor12\endcsname{242,100,178,97,213,142,42,61,91,158,153,41}
+\expandafter\def\csname datamatrix@codefactor14\endcsname{185,83,186,18,45,138,119,157,9,95,252,192,97,156}
+\expandafter\def\csname datamatrix@codefactor18\endcsname{188,90,48,225,254,94,129,109,213,241,61,66,75,188,39,100,195,83}
+\expandafter\def\csname datamatrix@codefactor20\endcsname{172,186,174,27,82,108,79,253,145,153,160,188,2,168,71,233,9,244,195,15}
+\expandafter\def\csname datamatrix@codefactor24\endcsname{193,50,96,184,181,12,124,254,172,5,21,155,223,251,197,155,21,176,39,109,205,88,190,52}
+\expandafter\def\csname datamatrix@codefactor28\endcsname{255,93,168,233,151,120,136,141,213,110,138,17,121,249,34,75,53,170,151,37,174,103,96,71,97,43,231,211}
+\expandafter\def\csname datamatrix@codefactor36\endcsname{112,81,98,225,25,59,184,175,44,115,119,95,137,101,33,68,4,2,18,229,182,80,251,220,179,84,120,102,181,162,250,130,218,242,127,245}
+\expandafter\def\csname datamatrix@codefactor42\endcsname{5,9,5,226,177,150,50,69,202,248,101,54,57,253,1,21,121,57,111,214,105,167,9,100,95,175,8,242,133,245,2,122,105,247,153,22,38,19,31,137,193,77}
+\expandafter\def\csname datamatrix@codefactor48\endcsname{19,225,253,92,213,69,175,160,147,187,87,176,44,82,240,186,138,66,100,120,88,131,205,170,90,37,23,118,147,16,106,191,87,237,188,205,231,238,133,238,22,117,32,96,223,172,132,245}
+\expandafter\def\csname datamatrix@codefactor56\endcsname{46,143,53,233,107,203,43,155,28,247,67,127,245,137,13,164,207,62,117,201,150,22,238,144,232,29,203,117,234,218,146,228,54,132,200,38,223,36,159,150,235,215,192,230,170,175,29,100,208,220,17,12,238,223,9,17}
+\expandafter\def\csname datamatrix@codefactor62\endcsname{204,11,47,86,124,224,166,94,7,232,107,4,170,176,31,163,17,188,130,40,10,87,63,51,218,27,6,147,44,161,71,114,64,175,221,185,106,250,190,197,63,245,230,134,112,185,37,196,108,143,189,201,188,202,118,39,210,144,50,169,93,242}
+\expandafter\def\csname datamatrix@codefactor68\endcsname{186,82,103,96,63,132,153,108,54,64,189,211,232,49,25,172,52,59,241,181,239,223,136,231,210,96,232,220,25,179,167,202,185,153,139,66,236,227,160,15,213,93,122,68,177,158,197,234,180,248,136,213,127,73,36,154,244,147,33,89,56,159,149,251,89,173,228,220}
+
+\newcommand{\datamatrix@code}[1]{%
+	\edef\datamatrix@codestr{#1}%
+	\edef\datamatrix@codelist{,\datamatrix@codestr}%
+	\edef\datamatrix@listsecond{0}%
+	\foreach\f in \datamatrix@codefactor{%
+		\global\edef\datamatrix@listsecond{\datamatrix@listsecond,0}%
+	}%
+	\foreach\c in \datamatrix@codestr{%
+		\global\edef\datamatrix@codelist{\datamatrix@codelist,\datamatrix@listsecond}%
+		\expandafter\expandafter\expandafter\datamatrix@listsplit\expandafter\expandafter\expandafter[\expandafter\@secondoftwo\datamatrix@codelist]%
+		\global\edef\datamatrix@codelist{}%
+		\foreach\f in \datamatrix@codefactor{%
+			\datamatrix@mul{\datamatrix@listfirst}{\f}{301}%
+			\expandafter\datamatrix@listsplit\expandafter[\datamatrix@listsecond]%
+			\datamatrix@xor{\datamatrix@listfirst}{\datamatrix@mulcnt}%
+			\global\edef\datamatrix@listsecond{\datamatrix@listsecond}%
+			\global\edef\datamatrix@codelist{\datamatrix@codelist,\the\datamatrix@xorcnt}%
+		}%
+	}%
+	\edef\datamatrix@codestr{\datamatrix@codestr\datamatrix@codelist}%
+}
+
+\newif\ifdatamatrix@outside
+\newcommand{\datamatrix@outside}[4]{
+	\ifnum#1<0
+		\datamatrix@outsidetrue
+	\else
+		\ifnum#2<0
+			\datamatrix@outsidetrue
+		\else
+			\ifnum#1<#3
+				\ifnum#2<#4
+					\datamatrix@outsidefalse
+				\else
+					\datamatrix@outsidetrue
+				\fi
+			\else
+				\datamatrix@outsidetrue
+			\fi
+		\fi
+	\fi
+}
+
+\newif\ifdatamatrix@direction
+\newcount\datamatrix@posx
+\newcount\datamatrix@posy
+\newcommand{\datamatrix@nextmodule}{
+	\ifdatamatrix@direction
+		\global\advance\datamatrix@posx 2
+		\global\advance\datamatrix@posy 2
+		\datamatrix@outside{\datamatrix@posx}{\datamatrix@posy}{\datamatrix@width}{\datamatrix@height}
+		\ifdatamatrix@outside
+			\global\datamatrix@directionfalse
+		\fi
+		\ifdatamatrix@direction
+		\else
+			\global\advance\datamatrix@posx 3
+			\global\advance\datamatrix@posy -1
+			\datamatrix@outside{\datamatrix@posx}{\datamatrix@posy}{\datamatrix@width}{\datamatrix@height}
+			\ifdatamatrix@outside
+				\global\advance\datamatrix@posx -2
+				\global\advance\datamatrix@posy -2
+			\fi
+			\datamatrix@outside{\datamatrix@posx}{\datamatrix@posy}{\datamatrix@width}{\datamatrix@height}
+			\ifdatamatrix@outside
+				\global\advance\datamatrix@posx -2
+				\global\advance\datamatrix@posy -2
+			\fi
+			\datamatrix@outside{\datamatrix@posx}{\datamatrix@posy}{\datamatrix@width}{\datamatrix@height}
+			\ifdatamatrix@outside
+				\global\advance\datamatrix@posx -2
+				\global\advance\datamatrix@posy -2
+			\fi
+		\fi
+	\else
+		\global\advance\datamatrix@posx -2
+		\global\advance\datamatrix@posy -2
+		\datamatrix@outside{\datamatrix@posx}{\datamatrix@posy}{\datamatrix@width}{\datamatrix@height}
+		\ifdatamatrix@outside
+			\global\datamatrix@directiontrue
+		\fi
+		\ifdatamatrix@direction
+			\global\advance\datamatrix@posx 1
+			\global\advance\datamatrix@posy -3
+			\datamatrix@outside{\datamatrix@posx}{\datamatrix@posy}{\datamatrix@width}{\datamatrix@height}
+			\ifdatamatrix@outside
+				\global\advance\datamatrix@posx 2
+				\global\advance\datamatrix@posy 2
+			\fi
+			\datamatrix@outside{\datamatrix@posx}{\datamatrix@posy}{\datamatrix@width}{\datamatrix@height}
+			\ifdatamatrix@outside
+				\global\advance\datamatrix@posx 2
+				\global\advance\datamatrix@posy 2
+			\fi
+			\datamatrix@outside{\datamatrix@posx}{\datamatrix@posy}{\datamatrix@width}{\datamatrix@height}
+			\ifdatamatrix@outside
+				\global\advance\datamatrix@posx 2
+				\global\advance\datamatrix@posy 2
+			\fi
+		\fi
+	\fi
+}
+
+\newcount\datamatrix@byte
+\newcount\datamatrix@edge
+\newcount\datamatrix@bitx
+\newcount\datamatrix@bity
+\newcount\datamatrix@bitshiftx
+\newcount\datamatrix@bitshifty
+\newcommand{\datamatrix@layout}[2]{%
+	\begin{tikzpicture}[x=#2,y=#2]
+		\datamatrix@bitx\datamatrix@width
+		\divide\datamatrix@bitx\datamatrix@regionwidth
+		\datamatrix@bity\datamatrix@height
+		\divide\datamatrix@bity\datamatrix@regionheight
+		\datamatrix@posy 0
+		\foreach\regiony in {1,...,\datamatrix@bity}{
+			\datamatrix@posx 0
+			\foreach\regionx in {1,...,\datamatrix@bitx}{
+				\fill (\datamatrix@posx,\datamatrix@posy) rectangle ++(-1,-1);
+				\foreach\x in {0,...,\datamatrix@regionwidth}{
+					\advance\datamatrix@posx\x
+					\fill (\datamatrix@posx,\datamatrix@posy) rectangle ++(1,-1);
+					\advance\datamatrix@posy\datamatrix@regionheight
+					\ifodd\x
+						\fill (\datamatrix@posx,\datamatrix@posy) rectangle ++(1,1);
+					\fi
+				}
+				\foreach\y in {0,...,\datamatrix@regionheight}{
+					\advance\datamatrix@posy\y
+					\fill (\datamatrix@posx,\datamatrix@posy) rectangle ++(-1,1);
+					\advance\datamatrix@posx\datamatrix@regionwidth
+					\ifodd\y
+						\fill (\datamatrix@posx,\datamatrix@posy) rectangle ++(1,1);
+					\fi
+				}
+				\global\advance\datamatrix@posx\datamatrix@regionwidth
+				\global\advance\datamatrix@posx 2
+			}
+			\global\advance\datamatrix@posy\datamatrix@regionheight
+			\global\advance\datamatrix@posy 2
+		}
+
+		\ifdatamatrix@square
+			\datamatrix@mod{\datamatrix@height}{8}
+			\divide\datamatrix@modcnt 2
+			\ifodd\datamatrix@modcnt
+				\fill (\datamatrix@width,0) ++(-1,0) rectangle ++(1,1);
+				\fill (\datamatrix@width,1) ++(-2,0) rectangle ++(1,1);
+			\fi
+		\fi
+
+		\datamatrix@directiontrue
+		\datamatrix@posx 0
+		\datamatrix@posy\datamatrix@height
+		\advance\datamatrix@posy -5
+		\foreach\sym in #1{
+			\datamatrix@byte\sym
+
+			\datamatrix@edge 0
+			\ifdatamatrix@square
+				\datamatrix@mod{\datamatrix@height}{8}
+				\divide\datamatrix@modcnt 2
+				\ifcase\datamatrix@modcnt
+				\or
+				\or
+					\ifnum\datamatrix@posx=0
+						\ifnum\datamatrix@posy=-1
+							\datamatrix@edge 1
+						\fi
+					\fi
+				\or
+					\ifnum\datamatrix@posx=0
+						\ifnum\datamatrix@posy=1
+							\datamatrix@edge 2
+						\fi
+					\fi
+					\datamatrix@bitx\datamatrix@posx
+					\datamatrix@bity\datamatrix@posy
+					\advance\datamatrix@bitx 2
+					\advance\datamatrix@bity 1
+					\ifnum\datamatrix@bitx=\datamatrix@width
+						\ifnum\datamatrix@bity=\datamatrix@height
+							\datamatrix@nextmodule
+						\fi
+					\fi
+				\fi
+			\else
+				\datamatrix@mod{\datamatrix@height}{8}
+				\divide\datamatrix@modcnt 2
+				\ifnum\datamatrix@modcnt=3
+					\datamatrix@mod{\datamatrix@width}{8}
+					\divide\datamatrix@modcnt 4
+					\ifcase\datamatrix@modcnt
+						\ifnum\datamatrix@posx=6
+							\ifnum\datamatrix@posy=-1
+								\datamatrix@edge 3
+							\fi
+						\fi
+						\datamatrix@bitx\datamatrix@posx
+						\datamatrix@bity\datamatrix@posy
+						\advance\datamatrix@bitx 1
+						\advance\datamatrix@bity 2
+						\ifnum\datamatrix@bitx=\datamatrix@width
+							\ifnum\datamatrix@bity=\datamatrix@height
+								\datamatrix@nextmodule
+							\fi
+						\fi
+					\or
+						\ifnum\datamatrix@posx=0
+							\ifnum\datamatrix@posy=1
+								\datamatrix@edge 4
+							\fi
+						\fi
+					\fi
+				\fi
+			\fi
+
+			\foreach\bit in {0,...,7}{
+				\datamatrix@bitx\datamatrix@posx
+				\datamatrix@bity\datamatrix@posy
+				\ifcase\datamatrix@edge
+					\ifcase\bit
+					\or
+						\advance\datamatrix@bitx -1
+					\or
+						\advance\datamatrix@bitx -2
+					\or
+						\advance\datamatrix@bity 1
+					\or
+						\advance\datamatrix@bity 1
+						\advance\datamatrix@bitx -1
+					\or
+						\advance\datamatrix@bity 1
+						\advance\datamatrix@bitx -2
+					\or
+						\advance\datamatrix@bity 2
+						\advance\datamatrix@bitx -1
+					\or
+						\advance\datamatrix@bity 2
+						\advance\datamatrix@bitx -2
+					\fi
+				\or
+					\ifcase\bit
+						\advance\datamatrix@bity 1
+						\advance\datamatrix@bitx -5
+					\or
+						\advance\datamatrix@bity 2
+						\advance\datamatrix@bitx -5
+					\or
+						\advance\datamatrix@bity 3
+						\advance\datamatrix@bitx -5
+					\or
+						\advance\datamatrix@bity 4
+						\advance\datamatrix@bitx -5
+					\or
+						\advance\datamatrix@bity 4
+						\advance\datamatrix@bitx -6
+					\or
+						\advance\datamatrix@bity 1
+						\advance\datamatrix@bitx 2
+					\or
+						\advance\datamatrix@bity 1
+						\advance\datamatrix@bitx 1
+					\or
+						\advance\datamatrix@bity 1
+					\fi
+				\or
+					\ifcase\bit
+						\advance\datamatrix@bity -1
+						\advance\datamatrix@bitx -3
+					\or
+						\advance\datamatrix@bitx -3
+					\or
+						\advance\datamatrix@bitx -4
+					\or
+						\advance\datamatrix@bitx -5
+					\or
+						\advance\datamatrix@bitx -6
+					\or
+						\advance\datamatrix@bity -1
+					\or
+					\or
+						\advance\datamatrix@bity 1
+					\fi
+				\or
+					\ifcase\bit
+						\advance\datamatrix@bity -1
+						\advance\datamatrix@bitx -9
+					\or
+						\advance\datamatrix@bity -1
+						\advance\datamatrix@bitx -10
+					\or
+						\advance\datamatrix@bity -1
+						\advance\datamatrix@bitx -11
+					\or
+						\advance\datamatrix@bitx -9
+					\or
+						\advance\datamatrix@bitx -10
+					\or
+						\advance\datamatrix@bitx -11
+					\or
+						\advance\datamatrix@bity 1
+						\advance\datamatrix@bitx -7
+					\or
+						\advance\datamatrix@bity 1
+						\advance\datamatrix@bitx -6
+					\fi
+				\or
+					\ifcase\bit
+						\advance\datamatrix@bity -1
+						\advance\datamatrix@bitx -3
+					\or
+						\advance\datamatrix@bitx -3
+					\or
+						\advance\datamatrix@bity 1
+						\advance\datamatrix@bitx -3
+					\or
+						\advance\datamatrix@bity 2
+						\advance\datamatrix@bitx -3
+					\or
+						\advance\datamatrix@bity 2
+						\advance\datamatrix@bitx -4
+					\or
+						\advance\datamatrix@bity -1
+					\or
+					\or
+						\advance\datamatrix@bity 1
+					\fi
+				\fi
+
+				\datamatrix@mod{\datamatrix@bitx}{\datamatrix@width}
+				\ifnum\datamatrix@bitx=\datamatrix@modcnt
+				\else
+					\datamatrix@bitx\datamatrix@modcnt
+					\datamatrix@mod{\datamatrix@width}{8}
+					\ifnum\datamatrix@modcnt>2
+						\advance\datamatrix@modcnt -8
+					\fi
+					\advance\datamatrix@bity\datamatrix@modcnt
+				\fi
+				\datamatrix@mod{\datamatrix@bity}{\datamatrix@height}
+				\ifnum\datamatrix@bity=\datamatrix@modcnt
+				\else
+					\datamatrix@bity\datamatrix@modcnt
+					\datamatrix@mod{\datamatrix@height}{8}
+					\ifnum\datamatrix@modcnt>2
+						\advance\datamatrix@modcnt -8
+					\fi
+					\advance\datamatrix@bitx -\datamatrix@modcnt
+				\fi
+
+				\datamatrix@bitshiftx\datamatrix@bitx
+				\divide\datamatrix@bitshiftx\datamatrix@regionwidth
+				\multiply\datamatrix@bitshiftx 2
+				\advance\datamatrix@bitx\datamatrix@bitshiftx
+				\datamatrix@bitshifty\datamatrix@bity
+				\divide\datamatrix@bitshifty\datamatrix@regionwidth
+				\multiply\datamatrix@bitshifty 2
+				\advance\datamatrix@bity\datamatrix@bitshifty
+
+				\ifodd\datamatrix@byte
+					\fill (\datamatrix@bitx,\datamatrix@bity) rectangle ++(1,1);
+				\fi
+
+				\global\divide\datamatrix@byte 2
+			}
+
+			\datamatrix@edge 0
+			\ifdatamatrix@square
+				\datamatrix@mod{\datamatrix@height}{8}
+				\divide\datamatrix@modcnt 2
+				\ifnum\datamatrix@modcnt=2
+					\ifnum\datamatrix@posx=1
+						\ifnum\datamatrix@posy=4
+							\datamatrix@edge 1
+						\fi
+					\fi
+				\fi
+			\else
+				\datamatrix@mod{\datamatrix@height}{8}
+				\divide\datamatrix@modcnt 2
+				\ifnum\datamatrix@modcnt=3
+					\datamatrix@mod{\datamatrix@width}{8}
+					\divide\datamatrix@modcnt 4
+					\ifnum\datamatrix@modcnt=0
+						\ifnum\datamatrix@posx=3
+							\ifnum\datamatrix@posy=0
+								\datamatrix@edge 3
+							\fi
+						\fi
+					\fi
+				\fi
+			\fi
+
+			\datamatrix@nextmodule
+
+			\ifcase\datamatrix@edge
+			\or
+				\global\advance\datamatrix@posx -2
+				\global\advance\datamatrix@posy -2
+			\or
+			\or
+				\global\advance\datamatrix@posx -2
+				\global\advance\datamatrix@posy -2
+			\or
+			\fi
+		}
+	\end{tikzpicture}%
+}
+
+\def\datamatrix{\@ifstar{\datamatrix@squarefalse\datamatrixi}{\datamatrix@squaretrue\datamatrixi}}
+\newcommand{\datamatrixi}[2][1pt]{%
+	\edef\datamatrix@raw{#2}%
+	\datamatrix@split{\datamatrix@raw}%
+	\datamatrix@encodeascii{\datamatrix@splitstr}%
+	\datamatrix@size
+	\datamatrix@pad
+	\datamatrix@code{\datamatrix@asciistr}%
+	\datamatrix@layout{\datamatrix@codestr}{#1}%
+}
+
+\endinput

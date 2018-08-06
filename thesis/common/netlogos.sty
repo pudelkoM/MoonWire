@@ -1,0 +1,381 @@
+%
+% netcommon.sty
+%
+% This style file defines some common macros for net style and class
+% files. Based on msvcommon.sty (2013/06/25 v0.06.1).
+%
+
+%----------------------------------------------------------------------
+% Identify package
+%
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{netlogos}%
+    [2015/02/26 v1.1 %
+    netcommon.sty TUM logos and basic font setup]
+
+
+% Packages
+\RequirePackage{tumcolors}%
+\RequirePackage{tikz}%
+\usetikzlibrary{calc}
+\usetikzlibrary{shadings}
+
+%----------------------------------------------------------------------
+% TUM, EI, and MSV logos
+%
+% USAGE
+%   \TUMlogo{key=value}
+%   \EIlogo{key=value}
+%   \MSVlogo{key=value}
+%          Draw the TUM/EI/MSV logo with options
+%             height = <dimen> (default 1cm)
+%                        (EIlogo actually occupies 105% of height!)
+%             color  = <colorname> (default color is TUMBlue)
+%             white  = <colorname> (default color is TUMWhite)
+%          Only applicable to TUMLogo
+%             shape  = filled/outline (default is filled)
+%             filled = true/false (shortcut for shape=filled)
+%             outline = true/false (shortcut for shape=outline)
+
+% Main user commands for logos
+\newcommand\TUM[1]{\TUMlogo{#1}}%
+\newcommand\TUMlogo[1]{%
+    \setkeys{netlogos}{#1}%
+    \csname netlogos@TUM@\netlogos@shape\endcsname
+}%
+\newcommand\EI[1]{\EIlogo{#1}}%
+\newcommand\EIlogo[1]{%
+    \setkeys{netlogos}{#1}%
+    \netlogos@EI
+}%
+\newcommand\IN[1]{\INlogo{#1}}%
+\newcommand\INlogo[1]{%
+    \setkeys{netlogos}{#1}%
+    \netlogos@IN
+}%
+\newcommand\NET[1]{\NETlogo{#1}}%
+\newcommand\NETlogo[1]{%
+    \setkeys{netlogos}{#1}%
+    \netlogos@NET
+}%
+\newcommand\NETold[1]{\NETlogoold{#1}}%
+\newcommand\NETlogoold[1]{%
+    \setkeys{netlogos}{#1}%
+    \netlogos@NETold
+}%
+\newcommand\MSV[1]{\MSVlogo{#1}}%
+\newcommand\MSVlogo[1]{%
+    \setkeys{netlogos}{#1}%
+    \netlogos@MSV
+}%
+\newcommand\OS[1]{\MSVlogo{#1}}%
+\newcommand\OSlogo[1]{%
+    \setkeys{netlogos}{#1}%
+    \netlogos@OS
+}%
+
+% Define the options for the drawing commands
+\newcommand\netlogos@shape{filled}
+\newcommand\netlogos@color{TUMBlue}%
+\newlength\netlogos@unitlength
+\setlength\netlogos@unitlength{1cm}%
+\define@key{netlogos}{shape}[filled]{%
+    \renewcommand\netlogos@shape{#1}%
+}%
+\define@key{netlogos}{color}[TUMBlue]{%
+    \renewcommand\netlogos@color{#1}%
+}%
+\define@key{netlogos}{height}[1cm]{%
+    \setlength\netlogos@unitlength{#1}%
+}%
+
+% TUM logo (filled)
+\newcommand\netlogos@TUM@filled{%
+    \begin{tikzpicture}[x=\netlogos@unitlength,y=\netlogos@unitlength]
+    \path[fill=\netlogos@color,nonzero rule]
+    (0.170,0.822) --
+    (0.170,0.000) --
+    (0.348,0.000) --
+    (0.348,0.821) --
+    (0.546,0.821) --
+    (0.546,0.000) --
+    (1.113,0.000) --
+    (1.113,0.812) --
+    (1.314,0.812) --
+    (1.314,0.000) --
+    (1.501,0.000) --
+    (1.501,0.812) --
+    (1.706,0.812) --
+    (1.706,0.000) --
+    (1.892,0.000) --
+    (1.892,1.000) --
+    (0.933,1.000) --
+    (0.933,0.182) --
+    (0.728,0.182) --
+    (0.728,0.999) --
+    (0.000,0.999) --
+    (0.000,0.822) --
+    cycle
+    (0.170,0.822);
+    \end{tikzpicture}%
+}%
+\newcommand\netlogos@TUM@outline{%
+\begin{tikzpicture}[x=\netlogos@unitlength,y=\netlogos@unitlength]
+    \path[fill=\netlogos@color,nonzero rule]
+    (0.189,0.826) --
+    (0.189,0.024) --
+    (0.340,0.024) --
+    (0.340,0.825) --
+    (0.556,0.825) --
+    (0.556,0.024) --
+    (1.086,0.024) --
+    (1.086,0.816) --
+    (1.307,0.816) --
+    (1.307,0.024) --
+    (1.466,0.024) --
+    (1.466,0.816) --
+    (1.689,0.816) --
+    (1.689,0.024) --
+    (1.848,0.024) --
+    (1.848,0.976) --
+    (0.935,0.976) --
+    (0.935,0.178) --
+    (0.710,0.178) --
+    (0.710,0.975) --
+    (0.024,0.975) --
+    (0.024,0.826) --
+    cycle
+    (0.533,0.000) --
+    (0.533,0.801) --
+    (0.363,0.801) --
+    (0.363,0.000) --
+    (0.166,0.000) --
+    (0.166,0.802) --
+    (0.000,0.802) --
+    (0.000,0.999) --
+    (0.734,0.999) --
+    (0.734,0.201) --
+    (0.911,0.201) --
+    (0.911,1.000) --
+    (1.871,1.000) --
+    (1.871,0.000) --
+    (1.665,0.000) --
+    (1.665,0.793) --
+    (1.489,0.793) --
+    (1.489,0.000) --
+    (1.283,0.000) --
+    (1.283,0.793) --
+    (1.110,0.793) --
+    (1.110,0.000) --
+    cycle
+    (0.533,0.000);
+\end{tikzpicture}%
+}%
+
+% IN logo
+\newcommand\netlogos@IN{%
+\begin{tikzpicture}[x=\netlogos@unitlength,y=\netlogos@unitlength]
+	\draw[draw=\netlogos@color,line width=.1ex] (.5,0) arc (0:83:.5);
+	\draw[draw=\netlogos@color,line width=.1ex] (.5,0) arc (0:-263:.5);
+	\draw[draw=\netlogos@color,line width=.1ex] (0,-.40) to (0,.60);
+\end{tikzpicture}%
+}%
+
+% EI logo   !!! note that the true height will be 1.05 * height !!!
+\newcommand\netlogos@EI{%
+\begin{tikzpicture}[x=\netlogos@unitlength,y=\netlogos@unitlength]
+    \path[fill=\netlogos@color,nonzero rule]
+        (0.821,0.514) .. controls (0.785,0.419) and (0.750,0.329) ..
+        (0.690,0.329) .. controls (0.633,0.329) and (0.600,0.415) ..
+        (0.565,0.507) .. controls (0.523,0.615) and (0.477,0.737) ..
+        (0.377,0.737) .. controls (0.272,0.737) and (0.218,0.606) ..
+        (0.170,0.491) .. controls (0.137,0.413) and (0.106,0.338) ..
+        (0.067,0.329) .. controls (0.041,0.390) and (0.027,0.456) ..
+        (0.027,0.525) .. controls (0.027,0.803) and (0.253,1.029) ..
+        (0.531,1.029) .. controls (0.733,1.029) and (0.908,0.909) ..
+        (0.988,0.737) .. controls (0.903,0.729) and (0.862,0.620) ..
+        (0.821,0.514)
+        (0.679,0.021) --
+        (0.679,0.022) .. controls (0.901,0.087) and (1.056,0.293) ..
+        (1.056,0.525) .. controls (1.056,0.815) and (0.820,1.050) ..
+        (0.531,1.050) .. controls (0.241,1.050) and (0.006,0.815) ..
+        (0.006,0.525) .. controls (0.006,0.293) and (0.160,0.087) ..
+        (0.382,0.022) --
+        (0.382,0.021) --
+        (0.000,0.021) --
+        (0.000,0.000) --
+        (0.404,0.000) --
+        (0.404,0.037) --
+        (0.396,0.040) .. controls (0.250,0.080) and (0.134,0.183) ..
+        (0.073,0.315) .. controls (0.119,0.328) and (0.150,0.401) ..
+        (0.185,0.485) .. controls (0.230,0.596) and (0.283,0.721) ..
+        (0.377,0.721) .. controls (0.466,0.721) and (0.508,0.609) ..
+        (0.550,0.502) .. controls (0.587,0.404) and (0.622,0.313) ..
+        (0.690,0.313) .. controls (0.761,0.313) and (0.797,0.408) ..
+        (0.836,0.508) .. controls (0.876,0.612) and (0.917,0.719) ..
+        (0.995,0.721) .. controls (1.020,0.661) and (1.034,0.594) ..
+        (1.034,0.525) .. controls (1.034,0.300) and (0.883,0.100) ..
+        (0.666,0.040) --
+        (0.658,0.037) --
+        (0.658,0.000) --
+        (1.061,0.000) --
+        (1.061,0.021) --
+        cycle
+        (0.679,0.021);
+\end{tikzpicture}%
+}%
+
+% NET logo
+\newcommand\netlogos@NET{%
+\begin{tikzpicture}[x=\netlogos@unitlength,y=\netlogos@unitlength]
+%	\shade[shading=color wheel] (0,0) rectangle (1,1);
+	% line 1
+	\path[fill=\netlogos@color] (0.0000,0.1122)	-- (0.5732,1.0000)
+							-- (0.5304,1.0000)
+							-- (0.0000,0.1785)
+							-- cycle;
+
+	% line 2
+	\path[fill=\netlogos@color] (0.1752,0.0000)	-- (1.0000,0.8501)
+							-- (1.0000,0.7984)
+							-- (0.2254,0.0000)
+							-- cycle;
+
+	% line 3
+	\path[fill=\netlogos@color] (0.0000,0.3768)	-- (0.7557,0.0000)
+							-- (0.8364,0.0000)
+							-- (0.0000,0.4170)
+							-- cycle;
+
+	% line 4
+	\path[fill=\netlogos@color] (0.0000,0.7627)	-- (1.0000,0.5986)
+							-- (1.0000,0.6350)
+							-- (0.0000,0.7991)
+							-- cycle;
+	% line 5
+	\path[fill=\netlogos@color] (0.6111,0.0000)	-- (0.3986,1.0000)
+							-- (0.4354,1.0000)
+							-- (0.6479,0.0000)
+							-- cycle;
+
+	% left corny
+	\path[fill=\netlogos@color] (0.0000,0.0000)	-- (0.0000,0.0762)
+							-- (0.0200,0.1072)
+							-- (0.0200,0.0200)
+							-- (0.1675,0.0200)
+							-- (0.1481,0.0000)
+							-- cycle;
+
+	\path[fill=\netlogos@color] (0.0000,0.21445)	-- (0.0000,0.3550)
+							-- (0.0200,0.3450)
+							-- (0.0200,0.24545)
+							-- cycle;
+
+	\path[fill=\netlogos@color] (0.0000,0.4388)	-- (0.0000,0.7429)
+							-- (0.0200,0.7396)
+							-- (0.0200,0.4288)
+							-- cycle;
+
+	\path[fill=\netlogos@color] (0.0000,0.8189)	-- (0.0000,1.0000)
+							-- (0.37865,1.0000)
+							-- (0.38285,0.9800)
+							-- (0.02000,0.9800)
+							-- (0.0200,0.8156)
+							-- cycle;
+
+	\path[fill=\netlogos@color] (0.4553,1.0000)	-- (0.5072,1.0000)
+							-- (0.4943,0.9800)
+							-- (0.4595,0.98000)
+							-- cycle;
+
+	\path[fill=\netlogos@color] (0.5964,1.0000)	-- (1.0000,1.0000)
+							-- (1.0000,0.8782)
+							-- (0.9800,0.8576)
+							-- (0.9800,0.9800)
+							-- (0.5835,0.9800)
+							-- cycle;
+
+	\path[fill=\netlogos@color] (1.0000,0.7704)	-- (1.0000,0.6548)
+							-- (0.9800,0.6581)
+							-- (0.9800,0.7498)
+							-- cycle;
+	
+	\path[fill=\netlogos@color] (1.0000,0.5788)	-- (1.0000,0.0000)
+							-- (0.8800,0.0000)
+							-- (0.8399,0.0200)
+							-- (1.0000,0.0200)
+							-- (0.9800,0.0200)
+							-- (0.9800,0.5821)
+							-- cycle;
+
+	\path[fill=\netlogos@color] (0.7120,0.0000)	-- (0.6678,0.0000)
+							-- (0.6628,0.0200)
+							-- (0.6719,0.0200)
+							-- cycle;
+	
+	\path[fill=\netlogos@color] (0.5912,0.0000)	-- (0.2526,0.0000)
+							-- (0.2732,0.0200)
+							-- (0.5870,0.0200)
+							-- cycle;
+\end{tikzpicture}%
+}%
+
+\newcommand\netlogos@NETold{%
+\begin{tikzpicture}[x=\netlogos@unitlength,y=\netlogos@unitlength]
+	\path[draw=\netlogos@color,line width=\netlogos@unitlength/45,use as bounding box] (0,0) -- (1,0) -- (1,1) -- (0,1) -- cycle;
+
+	\draw[line width=\netlogos@unitlength/12,white] (-0.0500, 0.0679) to ( 0.5841, 1.0500);
+	\draw[line width=\netlogos@unitlength/12,white] ( 0.1518,-0.0500) to ( 1.0500, 0.8758);
+	\draw[line width=\netlogos@unitlength/12,white] ( 0.6401,-0.0500) to ( 0.4064, 1.0500);
+	\draw[line width=\netlogos@unitlength/12,white] ( 0.8963,-0.0500) to (-0.0500, 0.4218);
+	\draw[line width=\netlogos@unitlength/12,white] ( 1.0500, 0.6086) to (-0.0500, 0.7891);
+
+	\clip (-\netlogos@unitlength/90,-\netlogos@unitlength/90) rectangle ($(1,1)+(\netlogos@unitlength/90,\netlogos@unitlength/90)$);
+
+	\draw[line width=\netlogos@unitlength/25,\netlogos@color] (-0.0500, 0.0679) to ( 0.5841, 1.0500);
+	\draw[line width=\netlogos@unitlength/25,\netlogos@color] ( 0.1518,-0.0500) to ( 1.0500, 0.8758);
+	\draw[line width=\netlogos@unitlength/25,\netlogos@color] ( 0.6401,-0.0500) to ( 0.4064, 1.0500);
+	\draw[line width=\netlogos@unitlength/25,\netlogos@color] ( 0.8963,-0.0500) to (-0.0500, 0.4218);
+	\draw[line width=\netlogos@unitlength/25,\netlogos@color] ( 1.0500, 0.6086) to (-0.0500, 0.7891);
+\end{tikzpicture}
+}%
+
+% MSV logo
+\newcommand\netlogos@MSV{%
+\begin{tikzpicture}[x=\netlogos@unitlength,y=\netlogos@unitlength]
+    \path[fill=\netlogos@color!40,nonzero rule]
+    (0.0000,0.0000) --
+    (0.5972,0.0000) --
+    (0.5000,0.5000) --
+    (1.0000,0.5972) --
+    (1.0000,1.0000) --
+    (0.7332,1.0000) --
+    (0.5000,0.5000) --
+    (0.0000,0.7332) --
+    cycle;
+    \path[fill=\netlogos@color,nonzero rule]
+    (0.0000,1.0000) --
+    (0.0000,0.7542) --
+    (0.0210,0.7444) --
+    (0.0210,0.9790) --
+    (0.7024,0.9790) --
+    (0.7122,1.0000) --
+    cycle
+    (1.0000,0.0000) --
+    (1.0000,0.5762) --
+    (0.9790,0.5721) --
+    (0.9790,0.0210) --
+    (0.6141,0.0210) --
+    (0.6182,0.0000) --
+    cycle;
+\end{tikzpicture}%
+}%
+
+% OS logo
+\newcommand\netlogos@OS{%
+\begin{tikzpicture}[x=\netlogos@unitlength,y=\netlogos@unitlength]
+%TODO
+\end{tikzpicture}%
+}%
+
+\endinput

@@ -8,3 +8,14 @@
 paper.pdf
 .DS_Store
 build
+
+thesis/*
+!thesis/*.bib
+!thesis/*.sty
+!thesis/*.cls
+!thesis/bib
+!thesis/common
+!thesis/packages
+!thesis/figures
+!thesis/include
+!thesis/tumcommon

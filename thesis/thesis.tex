@@ -1,0 +1,212 @@
+\documentclass[IN,11pt,twoside,openright,master,english]{tumthesis}
+
+% Include common packages
+\usepackage{packages}
+
+% IEEE tools for tweaking bib style
+\usepackage{IEEEtrantools}
+
+\newcommand\toc{\relax}
+
+\usepackage[backend=bibtex]{biblatex}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{longtable}
+\usepackage{tabu}
+\usepackage{ltxtable}
+\usepackage{url}
+\usepackage[style=base]{caption}
+\captionsetup{%
+	font={rm,footnotesize},
+	labelfont={sc},
+}
+\captionsetup[subfloat]{%
+	font={rm,footnotesize},
+	labelfont={rm},
+}
+\usepackage{subfig}
+\usepackage{nicefrac}
+\usepackage{longtable}
+\usepackage[hang]{footmisc}
+\usepackage{acro}
+\usepackage{blindtext}
+
+
+\setlength\footnotemargin{5pt}
+
+% Theorem environments
+\newtheorem{definition}{Definition}
+\newtheorem{theorem}{Theorem}
+\newtheorem{example}{Example}
+\newtheorem{lemma}{Lemma}
+
+
+% hyphenation
+\hyphenation{op-ti-cal net-work net-works semi-con-duc-tor tech-nique tech-niques}
+
+
+\usepackage{mdframed}
+\newlength{\charwidth}
+\setlength{\charwidth}{\widthof{\scriptsize\texttt{x}}}
+
+\makeatletter
+\newenvironment{moeplstborder}[2][]{%
+\ifx#1\@empty\@empty%
+	\edef\@margin{-1.5\baselineskip}%
+\else%
+	\edef\@margin{#1}%
+\fi%
+\vspace{-\baselineskip}
+\begin{center}
+\begin{minipage}{#2}
+\begin{mdframed}[%
+	topline=false,leftline=false,bottomline=false,rightline=true,
+	linecolor=TUMRed!20,linewidth=\charwidth,
+	innertopmargin=\@margin,innerbottommargin=-0.5\baselineskip,
+	innerleftmargin=0pt,innerrightmargin=-\charwidth,
+	userdefinedwidth=#2,
+]%
+}%
+{%
+\end{mdframed}%
+\end{minipage}
+\end{center}
+}%
+\makeatother
+
+% Needed for Bachelor's theses, Master's theses and IDP
+\titleenglish{MoonWire: Accelerated Site-to-Site VPN}
+\titlegerman{MoonWire: Beschleunigtes Site-to-Site VPN}
+\author{Maximilian~Pudelko}
+\supervisor{\NEThead}
+\advisor{Prof.~Dr.-Ing.~Wolfgang~Utschick}
+\assistants{Paul~Emmeric\tlc{}~M.\,Sc.,%
+Sebastion~Gallenmüller\tlc{}~M.\,Sc.}
+\courseofstudy{Informatics}
+\date{November 15, 2018}
+\location{Garching}
+
+\setcounter{tocdepth}{2}
+
+\input{include/acronyms}
+
+\addbibresource{bib/IEEEfull.bib}
+\addbibresource{bib/litnew.bib}
+\addbibresource{bib/mybib.bib}
+
+
+%\renewcommand{\andothersdelim}{}
+%bib.sty does not work older bibtex versions (works on TexLive 2016 or newer)
+%\usepackage{bib}
+
+% Load late to avoid same identifier warning
+\usepackage[colorlinks=false,pdfborder={0 0 0}]{hyperref}
+
+
+\begin{document}%
+
+% Makes sure that same author names are not replaced by dahes
+\bstctlcite{IEEEexample:BSTcontrol}
+
+\pagenumbering{gobble}
+\maketitle%
+\cleardoublepage
+
+
+\begin{abstract}
+	\input{include/abstract-en}
+\end{abstract}
+
+\begin{otherlanguage}{ngerman}
+	\begin{abstract}
+		\input{include/abstract-de}
+	\end{abstract}
+\end{otherlanguage}
+
+%\begin{thanks}
+%%\input{/home/moepi/.thanks}
+%\end{thanks}
+
+%\begin{preface}
+%foo bar
+%\end{preface}
+
+\tableofcontents
+\listoffigures
+\listoftables
+
+\startcontent
+
+\chapter{Introduction/Motivation}
+
+\chapter{Related Work \& Background}
+\section{Technology}
+	Present common technologies found in VPN software, CPUs. List state-of-the-art implementations.
+	\subsection{CPU Extension: AES-NI \& Vector Instructions}
+	\subsection{Noise protocol framework}
+		All these new ideas like from CRYPTO conferences and modern AEAD Ciphers like ChaCha-poly
+	\subsection{IPsec}
+	\cite{ferguson1999cryptographic}
+	\subsection{OpenVPN}
+	
+	\subsection{WireGuard}
+	\cite{donenfeld2017wireguard}
+	\cite{dowling2018cryptographic}
+	
+
+\chapter{Performance Model for VPN Implementations}
+\section{Influencing Factors}
+	\subsection{Network Stack \& Drivers}
+	\subsection{Memory Management}
+	\subsection{Multi-core Scaling}
+	\subsection{Cryptographic Ciphers}
+	\subsection{Data Structures}
+		Queues
+		Routing
+		State Storage \& Lookup
+\section{Evaluation of State-of-the-Art VPN Implementations}
+	\subsection{Defining Criteria of Performance}
+	\subsection{IPsec}
+	\subsection{OpenVPN}
+	\subsection{WireGuard}
+
+\chapter{MoonWire}
+\section{Design}
+	DPDK as basis, 
+\section{Implementation}
+	Present tried common implementation approaches that are possible, explain trade-offs, benchmark different versions, justify the final choice
+	\subsection{Replay Protection}
+	\subsection{Packet Distribution}
+	\subsection{AVX512}
+		Intel CPUs throttle frequency if AVX512 (?) code is encountered, this P-state change takes time + the rest of the code runs at slower base frequency.
+		Implement this, check freqs, benchmark, see if AVX512 can be worth it.
+\section{Evaluation \& Comparison}
+
+
+\chapter{Conclusion}
+\subsection{Future Work}
+	Implement better queuing: CODel
+
+%\input{include/chapter1}
+
+
+\appendix
+\chapter{Supplementals}
+\input{include/appendix}
+
+\printacronyms[heading=chapter,name=List of acronyms]
+\clearpage
+\pagestyle{thesischapter}
+
+\cleardoublepage
+\printbibliography[heading=bibintoc]
+
+%\cleardoublepage
+\clearpage
+\pagestyle{empty}
+%\mbox{}
+%\clearpage
+
+\end{document}
+
+

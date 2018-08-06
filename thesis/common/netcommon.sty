@@ -1,0 +1,126 @@
+%
+% netcommon.sty
+%
+% This style file defines some common macros for net style and class
+% files. Based on msvcommon.sty (2013/06/25 v0.06.1).
+%
+
+%----------------------------------------------------------------------
+% Identify package
+%
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{netcommon}%
+    [2015/02/26 v1.1 %
+    netcommon.sty TUM logos and basic font setup]
+
+%----------------------------------------------------------------------
+% Check for equal strings and empty strings
+%
+\newif\ifequal
+\equalfalse
+\newcommand\isequal[2]{%
+    \equalfalse
+    \edef\equal@a{\expandafter\detokenize\expandafter{#1}}%
+    \edef\equal@b{\expandafter\detokenize\expandafter{#2}}%
+    \ifx\equal@a\equal@b
+        \equaltrue
+    \fi
+}
+\newif\ifempty
+\emptyfalse
+\newcommand\isempty[1]{%
+    \emptyfalse
+    \ifx\relax\detokenize{#1}\relax
+        \emptytrue
+    \fi
+}
+\newcommand{\ifisequal}[2]{\isequal{#1}{#2}\ifequal}
+
+%----------------------------------------------------------------------
+% Options
+%----------------------------------------------------------------------
+\RequirePackage{kvoptions}%
+\SetupKeyvalOptions{family=net,prefix=net@}%
+% names / babel
+\DeclareBoolOption{german}{\net@germantrue}%
+\DeclareBoolOption{ngerman}{\net@germantrue}%
+\DeclareBoolOption{english}{\net@englishtrue}%
+
+% font >> MOVED TO NETBEAMER.CLS <<
+%\DeclareBoolOption[false]{timesmath}
+%\DeclareComplementaryOption{cmrmath}{timesmath}
+% default
+\DeclareDefaultOption{\relax}%
+% process options
+\ProcessKeyvalOptions*\relax
+
+% Packages
+\RequirePackage{tumcolors}%
+\RequirePackage[english,ngerman]{babel}%
+\RequirePackage{netlogos}%
+
+%----------------------------------------------------------------------
+% Language specific names and settings
+%----------------------------------------------------------------------
+\newcommand\TUMnameenglish{Technical University of Munich}
+\newcommand\TUMnamegerman{Technische Universit\"at M\"unchen}
+\newcommand\TUMname{\TUMnameenglish}
+
+\newcommand\INnameenglish{Department of Informatics}
+\newcommand\INnamegerman{Fakult\"at f\"ur Informatik}
+\newcommand\INname{\INnameenglish}
+
+\newcommand\EInameenglish{Department of Electrical Engineering and Information Technology}
+\newcommand\EInamegerman{Fakult\"at f\"ur Elektrotechnik und Informationstechnik}
+\newcommand\EIname{\EInameenglish}
+
+\newcommand\NETnameenglish{Chair of Network Architectures and Services}
+\newcommand\NETnamegerman{Lehrstuhl f\"ur Netzarchitekturen und Netzdienste}
+\newcommand\NETname{\NETnameenglish}
+
+\newcommand\MSVnameenglish{Associate Institute for Signal Processing}
+\newcommand\MSVnamegerman{Fachgebiet Methoden der Signalverarbeitung}
+\newcommand\MSVname{\MSVnameenglish}
+
+\newcommand\OSnameenglish{Associate Institute for Operating Systems}
+\newcommand\OSnamegerman{Fachgebiet f\"ur Betriebssysteme}
+\newcommand\OSname{\OSnameenglish}
+
+\newcommand\NEThead{Prof.\ Dr.-Ing.\ Georg Carle}
+\newcommand\MSVhead{Univ.-Prof.\ Dr.-Ing.\ Wolfgang Utschick}
+\newcommand\OShead{Prof.\ Dr.\ Uwe Baumgarten}
+
+\ifnet@german
+    \renewcommand\EIname{\EInamegerman}
+    \renewcommand\INname{\INnamegerman}
+    \renewcommand\NETname{\NETnamegerman}
+    \renewcommand\MSVname{\MSVnamegerman}
+    \renewcommand\OSname{\OSnamegerman}
+    \renewcommand\TUMname{\TUMnamegerman}
+\fi
+\ifnet@german
+    \AtBeginDocument{\selectlanguage{ngerman}}
+\else
+    \AtBeginDocument{\selectlanguage{english}}
+\fi
+
+\newcommand\mathbit[1]{\boldsymbol{#1}}
+
+%FIXME allow for different logos/texts
+\newcommand\logoheadline[0]{%
+	\raisebox{-.1ex}{\INlogo{height=1cm,color=black}}%
+	\hskip2mm%
+	\begin{minipage}[b]{5cm}%
+		\fontsize{6}{6}\normalfont\selectfont\NETname\\
+		\fontsize{6}{6}\normalfont\selectfont\INname
+	\end{minipage}%
+	\hfill%
+	\begin{minipage}[b]{5cm}%
+		\flushright
+		\fontsize{6}{6}\normalfont\selectfont\TUMname
+	\end{minipage}%
+	\hskip1mm%
+	\TUMlogo{height=1cm,color=black}%
+}
+
+\endinput

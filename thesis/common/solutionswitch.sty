@@ -1,0 +1,13 @@
+% ======================================================================
+% Defines whether a solution is printed or not
+% ======================================================================
+
+\usepackage{xstring}
+\newif\ifsolution
+\IfEq{\jobname}{\detokenize{solution}}{
+    \typeout{solution requested: \jobname}
+\solutiontrue}{
+    \typeout{problem requested: \jobname}
+\solutionfalse}
+
+

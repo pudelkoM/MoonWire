@@ -1,0 +1,98 @@
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{tumcmd}[2016/07/06 TUM commands]
+
+\def\theexaminer{}
+\newcommand{\examiner}[1]{%
+	\def\theexaminer{#1}
+}
+
+\newcounter{tum@assistants@cnt}
+\newcommand{\assistants}[1]{%
+	\def\tum@assistants{#1}%
+	\setcounter{tum@assistants@cnt}{0}%
+	\foreach \a in \tum@assistants {%
+		\stepcounter{tum@assistants@cnt}%
+		\expandafter\expandafter\expandafter\xdef\expandafter\csname tum@assistant\thetum@assistants@cnt\endcsname{\a}%
+	}%
+}
+\newcommand{\theassistants}[1][]{%
+	\ifx\@empty#1\@empty
+		\tum@assistants
+	\else%
+		\csname tum@assistant#1\endcsname
+	\fi%
+}
+
+\newcommand{\assistantsmail}[1]{%
+	\def\tum@assistantsmail{#1}%
+	\setcounter{tum@assistants@cnt}{0}%
+	\foreach \a in \tum@assistantsmail {%
+		\stepcounter{tum@assistants@cnt}%
+		\expandafter\expandafter\expandafter\xdef\expandafter\csname tum@assistantmail\thetum@assistants@cnt\endcsname{\a}%
+	}%
+}
+\newcommand{\theassistantsmail}[1][]{%
+	\ifx\@empty#1\@empty%
+		\tum@assistantsmail%
+	\else%
+		\csname tum@assistantmail#1\endcsname%
+	\fi%
+}
+\newcommand{\theassistantscount}{%
+    \thetum@assistants@cnt%
+}
+\def\tlc{,}
+
+% Convenience macros for math mode --------------------------------------------
+%test fonts
+\newcommand\showmathalphabet{\noindent\begin{tabular}{ll}
+    textnormal  & abcdefghijklmnopqrstuvwxyz\\
+                & ABCDEFGHIJKLMNOPQRSTUVWXYZ\\
+				& 1234567890\\
+    textit      & \textit{abcdefghijklmnopqrstuvwxyz}\\
+                & \textit{ABCDEFGHIJKLMNOPQRSTUVWXYZ}\\
+				& \textit{1234567890}\\
+	scshape		& \scshape{abcdefghijklmnopqrstuvwxyz}\\
+    mathnormal  & $abcdefghijklmnopqrstuvwxyz$\\
+                & $ABCDEFGHIJKLMNOPQRSTUVWXYZ$\\
+				& $1234567890$\\
+		& $\alpha\beta\gamma\delta\epsilon\zeta\eta\theta\kappa\lambda\mu\nu\xi\pi\rho\sigma\tau\phi\chi\psi\omega$\\
+		& $\Gamma\Delta\Lambda\Pi\Phi\Psi\Omega$\\
+    mathbit     & $\mathbit{abcdefghijklmnopqrstuvwxyz}$\\
+                & $\mathbit{ABCDEFGHIJKLMNOPQRSTUVWXYZ}$\\
+				& $\mathbit{1234567890}$\\
+		& $\mathbit{\alpha\beta\gamma\delta\epsilon\zeta\eta\theta\kappa\lambda\mu\nu\xi\pi\rho\sigma\tau\phi\chi\psi\omega}$\\
+		& $\mathbit{\Gamma\Delta\Lambda\Pi\Phi\Psi\Omega}$\\
+    mathfrak    & $\mathfrak{abcdefghijklmnopqrstuvwxyz}$\\
+                & $\mathfrak{ABCDEFGHIJKLMNOPQRSTUVWXYZ}$\\
+    mathcal     & $\mathcal{ABCDEFGHIJKLMNOPQRSTUVWXYZ}$\\
+\end{tabular}}
+
+
+\def\pd{\@ifstar{\pd@i{\hskip.3ex\partial}}{\pd@i{\hskip.2ex\opn{d}}}}
+\def\pd@i#1#2{#1\hskip-.25ex#2\hskip.15ex}
+
+\newcommand{\fixme}[1]{\textcolor{red}{[FIXME: #1]}}
+\newcommand{\code}[1]{\texttt{#1}}
+\newcommand{\opn}[1]{\operatorname{#1}}
+\newcommand{\expect}[1]{\opn{E}\left[#1\right]}
+\newcommand{\var}[1]{\opn{Var}\left[#1\right]}
+\newcommand{\eg}{e.\,g.\ }
+\newcommand{\ie}{i.\,e., }
+
+\protected\def\pr#1{%
+	\@ifnextchar[%
+	{\pr@i{#1}}%
+	{\pr@i{#1}[]}%
+}
+\protected\def\pr@i#1[#2]{%
+	\opn{Pr}\left[#1\ifx\@empty#2\@empty\relax\else\,|\,#2\fi\right]%
+}
+
+\protected\def\iid{%
+	\@ifnextchar,%
+	{i.\,i.\,d.}%
+	{i.\,i.\,d.\ }%
+}
+
+\endinput
