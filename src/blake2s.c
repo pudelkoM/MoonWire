@@ -170,36 +170,45 @@ int blake2s(void *out, size_t outlen,
    return 0;
 }
 
+enum blake2s_lengths {
+	BLAKE2S_BLOCKBYTES = 64,
+	BLAKE2S_OUTBYTES = 32,
+	BLAKE2S_KEYBYTES = 32
+};
+
 void blake2s_hmac(uint8_t *out, const uint8_t *in, const uint8_t *key, const size_t outlen, const size_t inlen, const size_t keylen) {
-	struct blake2s_state state;
-	u8 x_key[BLAKE2S_BLOCKBYTES] __aligned(__alignof__(u32)) = { 0 };
-	u8 i_hash[BLAKE2S_OUTBYTES] __aligned(__alignof__(u32));
+	blake2s_ctx state;
+	uint8_t x_key[BLAKE2S_BLOCKBYTES] __attribute__((aligned(__alignof__(uint32_t)))) = { 0 };
+	uint8_t i_hash[BLAKE2S_OUTBYTES] __attribute__((aligned(__alignof__(uint32_t))));
 	int i;
 
 	if (keylen > BLAKE2S_BLOCKBYTES) {
-		blake2s_init(&state, BLAKE2S_OUTBYTES);
+		blake2s_init(&state, BLAKE2S_OUTBYTES, NULL, 0);
 		blake2s_update(&state, key, keylen);
-		blake2s_final(&state, x_key, BLAKE2S_OUTBYTES);
-	} else
+		blake2s_final(&state, x_key);
+	} else {
 		memcpy(x_key, key, keylen);
+    }
 
-	for (i = 0; i < BLAKE2S_BLOCKBYTES; ++i)
+	for (i = 0; i < BLAKE2S_BLOCKBYTES; ++i) {
 		x_key[i] ^= 0x36;
+    }
 
-	blake2s_init(&state, BLAKE2S_OUTBYTES);
+	blake2s_init(&state, BLAKE2S_OUTBYTES, NULL, 0);
 	blake2s_update(&state, x_key, BLAKE2S_BLOCKBYTES);
 	blake2s_update(&state, in, inlen);
-	blake2s_final(&state, i_hash, BLAKE2S_OUTBYTES);
+	blake2s_final(&state, i_hash);
 
-	for (i = 0; i < BLAKE2S_BLOCKBYTES; ++i)
+	for (i = 0; i < BLAKE2S_BLOCKBYTES; ++i) {
 		x_key[i] ^= 0x5c ^ 0x36;
+    }
 
-	blake2s_init(&state, BLAKE2S_OUTBYTES);
+	blake2s_init(&state, BLAKE2S_OUTBYTES, NULL, 0);
 	blake2s_update(&state, x_key, BLAKE2S_BLOCKBYTES);
 	blake2s_update(&state, i_hash, BLAKE2S_OUTBYTES);
-	blake2s_final(&state, i_hash, BLAKE2S_OUTBYTES);
+	blake2s_final(&state, i_hash);
 
 	memcpy(out, i_hash, outlen);
-	memzero_explicit(x_key, BLAKE2S_BLOCKBYTES);
-	memzero_explicit(i_hash, BLAKE2S_OUTBYTES);
+	memset(x_key, 0, BLAKE2S_BLOCKBYTES);
+	memset(i_hash, 0, BLAKE2S_OUTBYTES);
 }

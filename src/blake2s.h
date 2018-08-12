@@ -6,6 +6,7 @@
 
 #include <stdint.h>
 #include <stddef.h>
+#include <string.h>
 
 // state context
 typedef struct {
@@ -36,6 +37,6 @@ int blake2s(void *out, size_t outlen,   // return buffer for digest
    const void *in, size_t inlen);      // data to be hashed
 
 // 
-void blake2s_hmac(u8 *out, const u8 *in, const u8 *key, const size_t outlen, const size_t inlen, const size_t keylen);
+void blake2s_hmac(uint8_t *out, const uint8_t *in, const uint8_t *key, const size_t outlen, const size_t inlen, const size_t keylen);
 
 #endif

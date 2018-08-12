@@ -28,3 +28,6 @@ ADD_LIBRARY(rfc6479 SHARED src/rfc6479.c)
 
 ADD_EXECUTABLE(replay-bench benchmarks/sliding-window/bench.c benchmarks/sliding-window/sorted-array.c)
 TARGET_LINK_LIBRARIES(replay-bench rfc2401 rfc6479 rt)
+
+INCLUDE_DIRECTORIES(src)
+ADD_LIBRARY(blake2s SHARED src/blake2s.c)
