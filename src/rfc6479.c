@@ -37,7 +37,7 @@
 #define BITMAP_LEN (REPLAY_WINDOW_SIZE / SIZE_OF_INTEGER)
 #define BITMAP_INDEX_MASK (BITMAP_LEN - 1)
 #define REDUNDANT_BITS (SIZE_OF_INTEGER * 8u) /* Redundant for index calculation */
-#define REDUNDANT_BIT_SHIFTS 6u /** sqrt(SIZE_OF_INTEGER) */
+#define REDUNDANT_BIT_SHIFTS 6u /** log2(REDUNDANT_BITS) */
 #define BITMAP_LOC_MASK (REDUNDANT_BITS - 1)
 
 _Static_assert(REPLAY_WINDOW_SIZE && ((REPLAY_WINDOW_SIZE & (REPLAY_WINDOW_SIZE - 1)) == 0), "Window size is not a power of 2");
@@ -53,7 +53,7 @@ size_t rfc6479_sizeof() {
     return sizeof(struct rfc6479_window);
 }
 
-int rfc6479_check_replay_window(struct rfc6479_window *w, uint64_t sequence_number) {
+int rfc6479_check_replay_window(const struct rfc6479_window *w, uint64_t sequence_number) {
     uint32_t bit_location;
     uint32_t index;
 

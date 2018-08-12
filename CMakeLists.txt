@@ -26,5 +26,5 @@ TARGET_LINK_LIBRARIES(sodium-bench ${CMAKE_SOURCE_DIR}/src/libsodium/build/lib/l
 ADD_LIBRARY(rfc2401 SHARED src/rfc2401.c)
 ADD_LIBRARY(rfc6479 SHARED src/rfc6479.c)
 
-ADD_EXECUTABLE(replay-bench benchmarks/sliding-window/bench.c)
+ADD_EXECUTABLE(replay-bench benchmarks/sliding-window/bench.c benchmarks/sliding-window/sorted-array.c)
 TARGET_LINK_LIBRARIES(replay-bench rfc2401 rfc6479 rt)

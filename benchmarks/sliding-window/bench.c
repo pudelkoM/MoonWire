@@ -22,7 +22,7 @@ struct rfc6479_window;
 
 size_t rfc6479_sizeof();
 
-int rfc6479_check_replay_window(struct rfc6479_window *w, uint64_t sequence_number);
+int rfc6479_check_replay_window(const struct rfc6479_window *w, uint64_t sequence_number);
 
 int rfc6479_update_replay_window(struct rfc6479_window *w, uint64_t sequence_number);
 
@@ -69,7 +69,7 @@ static void bench_rfc2401() {
     struct timespec t1, t2;
     uint64_t runs;
 
-    // 0% valid
+    // 0% hit
     struct rfc2401_window w = {};
     rfc2401_update(&w, 164);
     rfc2401_update(&w, 162);
@@ -120,7 +120,7 @@ static void bench_rfc2401() {
     printf("%s_0%%, %.2lf, %.2lf\n", "rfc2401", ops_check, ops_up);
 
 
-    // 50% valid
+    // 50% hit
     runs = 0;
     running = true;
     reset_timer(t);
@@ -166,7 +166,7 @@ static void bench_rfc2401() {
     printf("%s_50%%, %.2lf, %.2lf\n", "rfc2401", ops_check, ops_up);
 
 
-    // 100% valid
+    // 100% hit
     w = (struct rfc2401_window) {};
     rfc2401_update(&w, 164);
     rfc2401_update(&w, 162);
@@ -224,7 +224,7 @@ static void bench_rfc6479() {
     struct timespec t1, t2;
     uint64_t runs;
 
-    // 0% valid
+    // 0% hit
     struct rfc6479_window *w = calloc(rfc6479_sizeof(), 1);
     rfc6479_update_replay_window(w, 2000);
     rfc6479_update_replay_window(w, 2000 - 512);
@@ -256,15 +256,13 @@ static void bench_rfc6479() {
     reset_timer(t);
     clock_gettime(CLOCK_MONOTONIC, &t1);
     while (running) {
-        rfc6479_check_replay_window(w, 164 - 64);
-        rfc6479_check_replay_window(w, 164 - 100);
-        rfc6479_check_replay_window(w, 164 - 65);
-        rfc6479_check_replay_window(w, 162);
-        rfc6479_check_replay_window(w, 164 - 70);
-        rfc6479_check_replay_window(w, 164 - 80);
-        rfc6479_check_replay_window(w, 164 - 80);
-        rfc6479_check_replay_window(w, 164);
-        runs += 8;
+        assert(!rfc6479_update_replay_window(w, 2000));
+        assert(!rfc6479_update_replay_window(w, 2000 - 1024 - 1));
+        assert(!rfc6479_update_replay_window(w, 2000 - 512));
+        assert(!rfc6479_update_replay_window(w, 2000 - 1));
+        assert(!rfc6479_update_replay_window(w, 2000 - 10));
+        assert(!rfc6479_update_replay_window(w, 2000 - 100));
+        runs += 6;
     }
     clock_gettime(CLOCK_MONOTONIC, &t2);
 
