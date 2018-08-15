@@ -136,25 +136,16 @@ Sebastion~Gallenmüller\tlc{}~M.\,Sc.}
 \listoftables
 
 \startcontent
+\include{include/motivation}
 
-\chapter{Introduction/Motivation}
+\include{include/background}
 
-\chapter{Related Work \& Background}
-\section{Technology}
-	Present common technologies found in VPN software, CPUs. List state-of-the-art implementations.
-	\subsection{CPU Extension: AES-NI \& Vector Instructions}
-	\subsection{Noise protocol framework}
-		All these new ideas like from CRYPTO conferences and modern AEAD Ciphers like ChaCha-poly
-	\subsection{IPsec}
-	\cite{ferguson1999cryptographic}
-	\subsection{OpenVPN}
-	
-	\subsection{WireGuard}
-	\cite{donenfeld2017wireguard}
-	\cite{dowling2018cryptographic}
-	
+\chapter{Related Work}
+\label{chap:related_work}
+
 
 \chapter{Performance Model for VPN Implementations}
+\label{chap:perf_model}
 \section{Influencing Factors}
 	\subsection{Network Stack \& Drivers}
 	\subsection{Memory Management}
@@ -171,6 +162,7 @@ Sebastion~Gallenmüller\tlc{}~M.\,Sc.}
 	\subsection{WireGuard}
 
 \chapter{MoonWire}
+\label{chap:moonwire}
 \section{Design}
 	DPDK as basis, 
 \section{Implementation}
@@ -180,11 +172,15 @@ Sebastion~Gallenmüller\tlc{}~M.\,Sc.}
 	\subsection{AVX512}
 		Intel CPUs throttle frequency if AVX512 (?) code is encountered, this P-state change takes time + the rest of the code runs at slower base frequency.
 		Implement this, check freqs, benchmark, see if AVX512 can be worth it.
+	\subsection{NUMA Placement}
 \section{Evaluation \& Comparison}
 
+\chapter{Evaluation}
+\label{chap:evaluation}
 
 \chapter{Conclusion}
-\subsection{Future Work}
+\label{chap:conclusion}
+\section{Future Work}
 	Implement better queuing: CODel
 
 %\input{include/chapter1}
