@@ -1,0 +1,34 @@
+\chapter{Introduction \& Motivation}
+\label{chap:intro}
+
+\Acp{vpn} play an important role in todays network infrastructure. %TODO reference
+They are used in a multitude of scenarios and by very different actors. Multi-national firms use them to inter-connect their spread locations across the world. 
+So the usage ranges from many hundreds (or thousand) of concurrent sessions to just one in the private user setup.
+
+- mobile telephone base station to backbones 
+Goal: connect and transmit data over the public Internet
+
+With these many different usage scenarios, a variety of protocols and implementations were developed over the years, each with slightly different opinions about many aspects.
+
+As the amounts of traffic increases over time \cite{DECIX} the implementations handling it must become more efficient at it.
+%TODO: Comparison CPU speed vs. traffic increase (vs. encryption speeds?) over time
+
+Specialized hardware exists, but is expensive. So low-cost software solutions with off-the-shelf hardware remain relevant.
+
+\section{Research question}
+This thesis develops a performance model for \Acp{vpn} which categorizes and ranks different possible performance hazards in protocols and implementations. Additionally it will show which bottlenecks are worth optimizing compared to the effort required and the expectable gains.
+
+This model is applied to common software \Acp{vpn} implementations.
+
+We analyze how and why common bottlenecks occur, and present approaches to solve them.
+
+Lastly we investigate if our implementation of the WireGuard protocol, called MoonWire, based on the learned facts is faster than the canonical version and how much.
+
+\section{Structure of Thesis}
+The remainder of this thesis is structured as follows.
+Chapter~\ref{chap:background} gives an overview on the technical background surrounding VPN technology, introduces the necessary cryptographic foundations and presents various protocols and implementations. 
+Related work in the area of VPN performance measurements can be found in Chapter~\ref{chap:related_work}. %TODO
+In Chapter~\ref{chap:perf_model} we develop the performance model and list which factors it includes.
+The design and implementation details of MoonWire are explained in Chapter~\ref{chap:moonwire}, where dive into the technical details of approaches, explain their trade-offs and present performance figures.
+In Chapter~\ref{chap:evaluation} we benchmark MoonWire against the developed performance model and compare the results to the other VPN implementations, before we conclude in Chapter~\ref{chap:conclusion}.
+
