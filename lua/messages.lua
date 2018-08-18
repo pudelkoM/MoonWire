@@ -3,6 +3,7 @@ local bor, band, bnot, rshift, lshift = bit.bor, bit.band, bit.bnot, bit.rshift,
 
 local dpdk_export = require "missing-dpdk-stuff"
 local sodium = require "sodium"
+local blake2s = require "blake2s"
 
 local eth = require "proto.ethernet"
 local ip4 = require "proto.ip4"
@@ -38,7 +39,7 @@ ffi.cdef[[
 
     struct message_data {
         struct message_header header;
-        uint32_t key_idx;
+        uint32_t sender_idx;
         uint64_t counter;
         uint8_t encrypted_data[];
     };
@@ -56,7 +57,7 @@ ffi.metatype("struct message_header", message_header)
 local message_data = {}
 
 function message_data:__tostring()
-    return ("struct message_data {header: %s, key_idx: %u, counter: %s, data: [%x]}"):format(self.header, self.key_idx, tostring(self.counter), self.encrypted_data[0])
+    return ("struct message_data {header: %s, sender_idx: %u, counter: %s, data: [%x]}"):format(self.header, self.sender_idx, tostring(self.counter), self.encrypted_data[0])
 end
 
 message_data.__index = message_data
@@ -99,7 +100,7 @@ local default_headroom = ffi.sizeof("struct ip4_header") + ffi.sizeof("struct ud
 local ether_hdr_size = ffi.sizeof("struct ether_hdr")
 
 -- TODO: padding according to spec
-function wg.encrypt(buf, key, nonce, key_idx, headroom)
+function wg.encrypt(buf, key, nonce, sender_idx, headroom)
     -- mbuf layout transformation is as follows:
     -- from:
     -- | ethernet header | inner L3 packet |
@@ -124,7 +125,7 @@ function wg.encrypt(buf, key, nonce, key_idx, headroom)
     -- create WG data message header
     local msgData = ffi.cast("struct message_data*", buf:getBytes() + ether_hdr_size + headroom - ffi.sizeof("struct message_data"))
     msgData.header.type = wg.MESSAGE_DATA
-    msgData.key_idx = key_idx
+    msgData.sender_idx = sender_idx
     msgData.counter = ffi.cast("uint64_t*", nonce)[0] -- high 8 bytes in little-endian
 
     local err = sodium.crypto_aead_chacha20poly1305_ietf_encrypt(
@@ -147,8 +148,8 @@ function wg.decrypt(buf, key)
     if message_data == nil then
         return offset
     end
-    if message_data.key_idx ~= 1 then
-        return "Unknown key index: " .. message_data.key_idx
+    if message_data.sender_idx ~= 1 then
+        return "Unknown sender index: " .. message_data.sender_idx
     end
 
     ffi.cast("uint64_t*", nonce)[0] = message_data.counter
@@ -176,6 +177,21 @@ function wg.decrypt(buf, key)
     end
 
     return nil
+end
+
+function wg.deriveDataKeys(chaining_key)
+    local temp1 = ffi.new("uint8_t[?]", 32)
+    local temp2 = ffi.new("uint8_t[?]", 32 + 1, 0x2)
+    local temp3 = ffi.new("uint8_t[?]", 32)
+    local one = ffi.new("uint8_t[?]", 1, 0x1)
+
+    blake2s.blake2s_hmac(temp1, nil, chaining_key, 32, 0, 32)
+
+    blake2s.blake2s_hmac(temp2, one, temp1, 32, 1, 32)
+
+    blake2s.blake2s_hmac(temp3, temp2, temp1, 32, 32 + 1, 32)
+
+    return temp2, temp3 -- tx,rx for initiator; rx,tx for responder
 end
 
 return wg
@@ -294,7 +310,7 @@ return wg
 
     -- struct message_data {
     --     struct message_header header;
-    --     __le32 key_idx;
+    --     __le32 sender_idx;
     --     __le64 counter;
     --     u8 encrypted_data[];
     -- };

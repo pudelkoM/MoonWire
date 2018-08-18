@@ -64,12 +64,20 @@ function master(args)
     log:info("[master]: Shutdown")
 end
 
+require "utils"
+
 local function handshake()
     local txKey = ffi.new("uint8_t[?]", sodium.crypto_aead_chacha20poly1305_IETF_KEYBYTES)
     ffi.fill(txKey, sodium.crypto_aead_chacha20poly1305_IETF_KEYBYTES, 0xab)
 
     local rxKey = ffi.new("uint8_t[?]", sodium.crypto_aead_chacha20poly1305_IETF_KEYBYTES)
     ffi.fill(rxKey, sodium.crypto_aead_chacha20poly1305_IETF_KEYBYTES, 0xef)
+
+    local chaining_key = ffi.new("uint8_t[?]", 32)
+    ffi.fill(rxKey, 32, 0x56)
+    local tx, rx = msg.deriveDataKeys(chaining_key)
+    dumpHex(tx, 32)
+    dumpHex(rx, 32)
 
     return txKey, rxKey
 end
