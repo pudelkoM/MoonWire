@@ -30,14 +30,16 @@ function master(args)
     args.gateway = device.config{
         port = args.gateway,
         rxQueues = args.rxThreads,
-        rssQueues = args.rxThreads
+        numBufs = args.workers * 2047,
+        -- rssQueues = args.rxThreads
+        txQueues = 1,
     }
 
     args.tunnel = device.config{
         port = args.tunnel,
-        rxQueues = args.rxThreads,
-        rssQueues = args.rxThreads,
+        rxQueues = 1,
         txQueues = args.workers
+        -- rssQueues = args.rxThreads,
     }
 
     if sodium.sodium_init() < 0 then
@@ -52,7 +54,7 @@ function master(args)
 
     local rings = {} -- create one SPSC ring for each worker
     for i=1, args.workers do
-        table.insert(rings, pipe.newPacketRing(256))
+        table.insert(rings, pipe.newPacketRing(512))
         -- lm.startTask("worker", rings[i], args.tunnel:getTxQueue(i - 1))
         -- print("created worker", i, rings[i])
     end
@@ -79,12 +81,6 @@ local function handshake()
     return txKey, rxKey
 end
 
-local function clearBufArray(bufs)
-    for i = 1, bufs.size do
-        bufs[i] = nil
-    end
-end
-
 function worker(ring, txQueue)
     local id = txQueue.qid
     local counter = stats:newManualRxCounter("Worker " .. id)
@@ -97,30 +93,18 @@ function worker(ring, txQueue)
     local outerDstIP = ffi.new("union ip4_address"); outerDstIP:setString("10.4.0.2")
 
     local key, _ = handshake()
+    -- TODO: spread nonces across workers
     local nonce = ffi.new("uint8_t[?]", sodium.crypto_aead_chacha20poly1305_IETF_NPUBBYTES, 0)
     
-    bufs = memory.bufArray(4)
+    bufs = memory.bufArray(64)
 
+    require("jit.p").start("a2")
     while lm.running() do
-        clearBufArray(bufs)
         local rx = ring:recv(bufs)
-        
-        -- for i = 1, rx do
-        --     local buf = bufs[i]
-        --     -- print(id, buf)
-        --     counter:update(1, buf:getSize())
-        --     txQueue:sendSingle(buf)
-        -- end
-        
-        -- info("received from ring", rx, bufs.size)
         
         for i = 1, rx do
             local buf = bufs[i]
             counter:update(1, buf:getSize())
-            
-            if buf == nil then
-                info("buf nil!", buf, i, rx)
-            end
             
             local safe = dpdk_export.rte_pktmbuf_headroom_export(buf)
             local err = msg.encrypt(buf, key, nonce, 1)
@@ -157,12 +141,9 @@ function worker(ring, txQueue)
                 udpChecksum = 0x0 -- disable checksumming since we have crypto authentication
             }
         end
-        local tx = txQueue:sendN(bufs, rx)
-        if not tx == 0 then
-            print("tx", tx, "rx", rx)
-        end
-        -- bufs:freeAll()
+        txQueue:sendN(bufs, rx)
     end
+    require("jit.p").stop()
     counter:finalize()
 end
 
@@ -181,43 +162,17 @@ function slaveTaskRx(gwDevQueue, rings)
 
     -- require("jit.p").start("a")
     while lm.running() do
-        clearBufArray(bufs)
-        local rx = gwDevQueue:tryRecv(bufs, 1000 * 1000)
-        
-        for i = 1, rx do -- Debug
-            if bufs[i] == nil then
-                print("rxSlave",  "buf nil!", i)
-            end
-        end
-        
+        local rx = gwDevQueue:tryRecv(bufs, 1000 * 1000)    
+    
         -- print("rxSlave", rx, nextRing, rings[1]:full(), rings[2]:full())
         if rx > 0 then
-
-            -- local tx1 = rings[1]:sendN(bufs, rx)
-            -- if tx1 == rx then
-            --     goto next
-            -- end
-            -- local tx2 = rings[2]:sendN(bufs, rx)
-            -- if tx2 == rx then
-            --     goto next
-            -- end
-            -- print("rxSlave", "no ring free")
-            -- bufs:freeAll()
-            -- ::next::
-
             local suc = rings[nextRing]:sendN(bufs, rx)
-            if suc ~= 0 and suc ~= rx then
-                print(suc, rx)
-                log:fatal("ring send fail: " .. tostring(suc) .. " is not 0 or " .. rx)
-            end
             if suc == 0 then
-                print("rxSlave", "ring full!", nextRing)
-                bufs:freeAll()
+                -- print("rxSlave", "ring full!", nextRing)
+                bufs:free(rx)
             end
 
-            -- nextRing = fastIndexWrap(nextRing + 1, numRings)
-            nextRing = (nextRing % numRings) + 1
-            -- nextRing = 1
+            nextRing = fastIndexWrap(nextRing + 1, numRings)
         end
     end
     -- require("jit.p").stop()
