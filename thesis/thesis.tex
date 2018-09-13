@@ -132,8 +132,7 @@ Sebastion~Gallenmüller\tlc{}~M.\,Sc.}
 %\end{preface}
 
 \tableofcontents
-\listoffigures
-\listoftables
+
 
 \startcontent
 \include{include/motivation}
@@ -143,6 +142,51 @@ Sebastion~Gallenmüller\tlc{}~M.\,Sc.}
 \chapter{Related Work}
 \label{chap:related_work}
 
+\chapter{MoonWire}
+\label{chap:moonwire}
+\section{Design}
+DPDK as basis, libmoon, libsodium, blake2s reference impl
+\section{Implementation}
+Present tried common implementation approaches that are possible, explain trade-offs, benchmark different versions, justify the final choice
+\subsection{Replay Protection}
+\subsection{Packet Distribution}
+	Packets arrive at a RxQueue of a device and have to be dequeued and processed.
+	Multiple options, pipelines, queues and stuff
+	
+	Note: For the gateway usecase (1:1) RSS does not work since src and dst ip/port are equal on every packet. It can work in multi-client setup.
+	
+	\subsubsection{Single Core Setup}
+	One Core/Thread does everything: Rx, encryption, Tx
+	Super simple, no synchronization, not scalable
+	
+	\subsubsection{Single Rx, Multiple Worker}
+	Single Rx thread, ring(s) to distribute packets to workers, workers enc. and tx
+	
+	Keys and FIB state have to be replicated
+	
+	How to distribute? hashing?
+	
+	Multiple options for distribution: 1 MPMC, multiple SPSC rings
+	
+	\subsection{Pipelining}
+	TBD
+	
+	\subsection{Nonce Handling}
+	WireGuard protocol specifies IETF chacha20poly1507 with 12 (recheck this) bytes nonces. Since nonce reuse under the same key is devastating for security, implementations have to ensure this never happens. For short nonces it is recommended to increment the previous one, instead of generating random ones.
+	In multi-threaded implementations this can become a bottleneck as the nonces are essentially shared state between multiple read-write threads and synchronization is often expensive.
+	The following describes different techniques to solve this.
+	
+	Note: As an alternative using XChacha20, 192-bit nonce, can be randomly generated, no shared state
+		
+	\subsubsection{Mutual exlusive access (atomics, mutex, \texttt{\_\_sync\_add\_and\_fetch()})}
+	\subsubsection{One Thread maintains nonces, sends them with work packet}
+	\subsubsection{Partitioning}
+
+\subsection{AVX512}
+Intel CPUs throttle frequency if AVX512 (?) code is encountered, this P-state change takes time + the rest of the code runs at slower base frequency.
+Implement this, check freqs, benchmark, see if AVX512 can be worth it.
+\subsection{NUMA Placement}
+\section{Evaluation \& Comparison}
 
 \chapter{Performance Model for VPN Implementations}
 \label{chap:perf_model}
@@ -155,42 +199,45 @@ Sebastion~Gallenmüller\tlc{}~M.\,Sc.}
 		Queues
 		Routing
 		State Storage \& Lookup
-\section{Evaluation of State-of-the-Art VPN Implementations}
-	\subsection{Defining Criteria of Performance}
-	\subsection{IPsec}
-	\subsection{OpenVPN}
-	\subsection{WireGuard}
 
-\chapter{MoonWire}
-\label{chap:moonwire}
-\section{Design}
-	DPDK as basis, 
-\section{Implementation}
-	Present tried common implementation approaches that are possible, explain trade-offs, benchmark different versions, justify the final choice
-	\subsection{Replay Protection}
-	\subsection{Packet Distribution}
-	\subsection{AVX512}
-		Intel CPUs throttle frequency if AVX512 (?) code is encountered, this P-state change takes time + the rest of the code runs at slower base frequency.
-		Implement this, check freqs, benchmark, see if AVX512 can be worth it.
-	\subsection{NUMA Placement}
-\section{Evaluation \& Comparison}
 
 \chapter{Evaluation}
 \label{chap:evaluation}
+
+\section{Evaluation of State-of-the-Art VPN Implementations}
+	\subsection{Defining Criteria of Performance}
+	\subsubsection{Setup A - Site-to-Site VPN}
+	\begin{figure}[h]
+		\centering
+		\includegraphics[width=1\linewidth]{figures/PoC-Overview}
+		\caption{Overview of Site-to-Site VPN Setup}
+		\label{fig:poc-overview}
+	\end{figure}
+	
+	\subsubsection{Setup B - Many Client Entry Point}
+	
+	%TODO: sort by client or sort by benchmark?
+	\subsection{IPsec}
+	\subsection{OpenVPN}
+	\subsection{WireGuard}
+		\subsubsection{GSoC Performance Improvements}
+	\subsection{MoonWire}
+	\subsection{UDP Socket}
 
 \chapter{Conclusion}
 \label{chap:conclusion}
 \section{Future Work}
 	Implement better queuing: CODel
 
-%\input{include/chapter1}
-
-
 \appendix
 \chapter{Supplementals}
+
+\listoffigures
+\listoftables
+
 \input{include/appendix}
 
-\printacronyms[heading=chapter,name=List of acronyms]
+\printacronyms[heading=chapter,name=List of Acronyms]
 \clearpage
 \pagestyle{thesischapter}
 
