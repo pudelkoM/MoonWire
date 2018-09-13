@@ -1,0 +1,21 @@
+\documentclass[beamer,multi=true,preview]{standalone}
+\usepackage{packages}
+
+\standaloneenv{tikzpicture}
+
+\let\myshipout\shipout
+\begin{document}%
+\let\shipout\myshipout
+
+\begin{standaloneframe}[plain]%
+\begin{tikzpicture}[>=latex]%
+	\node[client] (client) at (0,0) {};
+	\node[router] (router) at (2,0) {};
+	\node[notebook] (notebook) at (4,0) {};
+
+	\draw[line width=1pt] (client) to (router);
+	\draw[line width=1pt] (router) to (notebook);
+\end{tikzpicture}%
+\end{standaloneframe}%
+\end{document}%
+

@@ -1,0 +1,28 @@
+\usepackage[utf8]{inputenc}
+\usepackage{packages}
+\usepackage{beamermods}
+
+% For beamer mode (default):
+\author[S. G\"unther]{Stephan Günther, M.\,Sc.}
+\title[Networking]{Something with Networking}
+
+
+% For lecture mode (use package option 'lecture'):
+%\lecture[GRNVS]{Grundlagen Rechnernetze und Verteilte Systeme}
+%\module{IN0010}
+%\semester{SoSe\,2016}
+%\assistants{Johannes Naab, Stephan Günther, Maurice Leclaire}
+
+
+\usepackage{pgfpages}
+\usepackage{ifthen}
+% ============================================================================
+% jobname solution
+% ============================================================================
+\newif\ifsolution%
+\ifthenelse{\equal{\detokenize{notes}}{\jobname}}{%
+\setbeameroption{show notes on second screen=bottom}
+\setbeamercolor{note page}{bg=white, fg=black}
+\setbeamercolor{note title}{bg=white!95!black, fg=black}
+}{
+}
