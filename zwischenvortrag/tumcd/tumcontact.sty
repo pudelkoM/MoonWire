@@ -1,0 +1,66 @@
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{tumcontact}[2016/03/18 TUM contact information]
+
+\RequirePackage{pbox}
+\RequirePackage{tumlogo}
+\RequirePackage{tumlang}
+
+
+%\TUMHeader*[color]{height}
+\newif\iftumcontact@displaytext
+\newlength{\tumcontact@unitsize}
+\newlength{\tumcontact@fontsize}
+\newcommand{\tumcontact@header}[2][TUMBlue]%
+{%
+	\begingroup%
+	\setlength{\tumcontact@unitsize}{#2}%
+	\setlength{\tumcontact@fontsize}{\tumcontact@unitsize}%
+	\divide\tumcontact@fontsize 196608%
+	\multiply\tumcontact@fontsize 65536%
+	\fontsize{\tumcontact@fontsize}{\tumcontact@fontsize}\selectfont%
+	\normalfont\sffamily%
+	\color{#1}%
+	\noindent%
+	\ifdefined\departmentlogo%
+		\ifdefined\chairname%
+		\else%
+			\departmentlogo[#1]{\tumcontact@unitsize}%
+			\hspace*{0.5\tumcontact@unitsize}%
+		\fi%
+	\fi%
+	\iftumcontact@displaytext%
+		\pbox[b][\tumcontact@unitsize][s]{\textwidth}{%
+			\strut\ifdefined\chairname\chairname\fi%
+			\vspace{\fill}\\%
+			\strut\ifdefined\departmentname\departmentname\fi%
+			\vspace{\fill}\\%
+			\strut\TUMname%
+		}%
+	\fi%
+	\hspace*{\fill}%
+	\TUMLogo[#1]{\tumcontact@unitsize}%
+	\endgroup%
+}%
+\def\TUMheader{%
+	\@ifstar%
+	{\tumcontact@displaytextfalse\tumcontact@header}%
+	{\tumcontact@displaytexttrue\tumcontact@header}%
+}%
+
+%\TUMFooter[Additional text]
+\newcommand{\TUMfooter}[1][]%
+{%
+	\begingroup%
+	\normalfont\sffamily%
+	\noindent%
+	\pbox[t]{\textwidth}{%
+		\textbf{\TUMname}\\%
+		\ifdefined\departmentname\departmentname\fi\\%
+		\ifdefined\chairname\chairname\fi%
+	}%
+	\hspace{2em}%
+	\pbox[t]{\textwidth}{#1}%
+	\endgroup%
+}%
+
+\endinput

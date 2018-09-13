@@ -1,0 +1,56 @@
+\documentclass[NET,english]{tumbeamer}
+
+% If you load additional packages, do so in packages.sty as figures are build
+% as standalone documents and you may want to have effect on them, too.
+
+% Folder structure:
+% .
+% ├── beamermods.sty                  % depricated an will be removed soon
+% ├── compile                         % remotely compile slides
+% ├── figures                         % all figures go here
+% │   └── schichtenmodelle_osi.tikz   % each .tikz or .tex is a target
+% ├── include                         % create your document here
+% │   ├── example.tex                 % example document
+% │   └── slides.tex                  % make document wide changes here
+% ├── lit.bib                         % literature
+% ├── Makefile
+% ├── moeptikz.sty                    % fancy networking symbols
+% ├── packages.sty                    % load additional packages there
+% ├── pics                            % binary pcitures go here
+% ├── slides.tex                      % main document (may be more than one)
+% ├── tumbeamer.cls
+% ├── tumcolor.sty                    % TUM color definitions
+% ├── tumcontact.sty                  % TUM headers and footers
+% ├── tumlang.sty                     % TUM names and language settings
+% └── tumlogo.sty                     % TUM logos
+
+% Configure author, title, etc. here:
+\input{include/slides}
+
+\begin{document}
+
+% For lecture mode, you may want to build one set of slides per chapter but
+% with common page numbering. If so,
+% 1) create a new .tex file for each chapter, e.g. slides_chapN.tex,
+% 2) set the part counter to N-1 (assuming chapters start at 0), and
+% 3) and name your chapter by using the \part{} command.
+%\setcounter{part}{-1}
+%\part{Organisatorisches und Einleitung}
+
+% Include source files from ./include (or ./include/chapN).
+\input{include/example}
+
+% Include markdown source from ./pandoc
+%\input{pandoc/example}
+
+% Comment out if you do not want a bibliography
+\section{Bibliography}
+\begin{frame}[allowframebreaks]
+    \bibliographystyle{abbrv}
+    \setbeamertemplate{bibliography item}[text]
+    \footnotesize
+    \bibliography{lit}
+\end{frame}
+
+\end{document}
+
