@@ -1,0 +1,42 @@
+\documentclass[border=0pt]{standalone}
+
+\usepackage{../../tumcolors}
+\usepackage{pgfplots}
+\pgfplotsset{compat=newest}
+\pgfplotsset{grid style={dotted}}
+\usetikzlibrary{plotmarks}
+
+\begin{document}
+
+\pgfplotsset{compat=newest}
+\pgfplotsset{grid style={dotted}}
+\tikzset{every mark/.append style={scale=0.9}}
+\begin{tikzpicture}
+
+\begin{axis}[
+	footnotesize,
+	scale only axis,
+	width=7cm,
+	height=3cm,
+	xlabel={Offered Load [Mpps]},
+	xmin=0,
+	xmax=0.6,
+	ymin=0,
+	ymax=0.5,
+%	symbolic x coords={1 K, 10 K, 100 K, 1 M, 10 M},
+	%xtick=data,
+	ytick={0,0.1,0.2,0.3,0.4,0.5},
+	ylabel=Processed Load {[}Mpps{]},
+	xtick distance = 0.1,
+	grid=major,
+	legend entries={Packets received, Packets encrypted},
+	legend style={at={(0.01,0.99)},anchor=north west, font=\footnotesize},
+	every axis legend/.append style={nodes={right}}
+]
+\addplot[mark=square*,color=TUMBlue] table[col sep=comma, x index = {0}, y index = {1}] {encrypt-64.csv};
+\addplot[mark=square*,color=TUMOrange] table[col sep=comma, x index = {0}, y index = {2}] {encrypt-64.csv};
+\draw[dashed, line width=0.2mm] (0,0) -- (10,10);
+\end{axis}
+
+\end{tikzpicture}
+\end{document}
