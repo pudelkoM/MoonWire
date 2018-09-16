@@ -303,12 +303,16 @@
 		\centering%
 		\Large%
 		\strut\textcolor{\tumbeamer@basecolor}{\inserttitle}%
-		\\[4ex]%
+		\\[1ex]
+		\footnotesize%
+		\insertsubtitle%
 		\normalsize%
+		\\[4ex]%
 		\bfseries\strut\insertauthor\normalfont%
 		\\[2ex]%
 		\footnotesize%
-		\today%
+		%\today%
+		\insertdate%
 		\\[4ex]%
 		\ifdefined\departmentname%
 			\ifdefined\chairname%
