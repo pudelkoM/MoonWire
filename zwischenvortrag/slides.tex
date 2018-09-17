@@ -67,7 +67,7 @@
 	
 	%Focus on Site-to-Site setups:
 	\begin{itemize}
-		\item Only two (or similar little) endpoints
+		\item Only two (or similar few) endpoints serving many hosts
 		\item Very high bandwidth between them
 	\end{itemize}
 \end{frame}
@@ -113,6 +113,10 @@
 	Hard to improve, correctness is more important
 	
 	Solution: work distribution to multiple cores
+	
+	WireGuard does this with Kernel worker tasks and a queue
+	
+	Lots of possible implementations
 \end{frame}
 
 \section{Case Study: Nonces in Symmetric Encryption}
