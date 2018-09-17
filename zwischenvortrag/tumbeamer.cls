@@ -326,10 +326,10 @@
 }
 
 \DeclareDocumentCommand{\tumbeamer@beamer@contentframe}{}{
-	\begin{frame}
-		\frametitle{\contentsname}
-		\tableofcontents
-	\end{frame}
+%	\begin{frame}
+%		\frametitle{\contentsname}
+%		\tableofcontents
+%	\end{frame}
 }
 
 
