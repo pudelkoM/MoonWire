@@ -6,15 +6,16 @@ local log    = require "log"
 local memory = require "memory"
 local arp    = require "proto.arp"
 local server = require "webserver"
+local ffi    = require "ffi"
 
 -- set addresses here
-local DST_MAC       = "68:05:ca:32:44:d8" -- resolved via ARP on GW_IP or DST_IP, can be overriden with a string here
+local DST_MAC       = "3C:FD:FE:9E:D6:B8" -- resolved via ARP on GW_IP or DST_IP, can be overriden with a string here
 local PKT_LEN       = 60
-local SRC_IP        = "10.0.0.1"
+local SRC_IP        = "10.0.0.1" -- Base address of /24 subnet
 local DST_IP        = "10.0.2.2"
 local SRC_PORT_BASE = 1234 -- actual port will be SRC_PORT_BASE * random(NUM_FLOWS)
 local DST_PORT      = 1234
-local NUM_FLOWS     = 1000
+local NUM_FLOWS     = 128
 -- used as source IP to resolve GW_IP to DST_MAC
 -- also respond to ARP queries on this IP
 local ARP_IP    = SRC_IP
@@ -32,6 +33,8 @@ function configure(parser)
         parser:option("--size", "Size of the send packets"):convert(tonumber):default(60)
         parser:option("-o --output", "File to output statistics to")
         parser:option("-s --seconds", "Stop after n seconds")
+        parser:option("--vary", "How to generate flows. 'L2', 'L3'"):default("L3")
+        parser:option("--flows", "Number of flow to generate"):convert(tonumber):default(1024)
         parser:flag("-a --arp", "Use ARP.")
         parser:flag("--csv", "Output in CSV format")
         return parser:parse()
@@ -104,6 +107,10 @@ function master(args,...)
 end
 
 function txSlave(queue, dstMac, pktLen)
+        -- L2 source and destination in binary form for efficiency
+        srcSubnet = ffi.new("union ip4_address"); srcSubnet:setString(SRC_IP)
+        dstSubnet = ffi.new("union ip4_address"); dstSubnet:setString(DST_IP)
+
         -- memory pool with default values for all packets, this is our archetype
         local mempool = memory.createMemPool(function(buf)
                 buf:getUdpPacket():fill{
@@ -127,7 +134,10 @@ function txSlave(queue, dstMac, pktLen)
                 for i, buf in ipairs(bufs) do
                         -- packet framework allows simple access to fields in complex protocol stacks
                         local pkt = buf:getUdpPacket()
-                        pkt.udp:setSrcPort(SRC_PORT_BASE + math.random(0, NUM_FLOWS - 1))
+                        -- TODO: modify packets according to flags
+                        pkt.ip4.src:set(srcSubnet:get() + math.random(0, NUM_FLOWS - 1))
+                        -- pkt.ip4.dst:set(dstSubnet:get() + math.random(0, NUM_FLOWS - 1))
+                        -- pkt.udp:setSrcPort(SRC_PORT_BASE + math.random(0, NUM_FLOWS - 1))
                 end
                 -- UDP checksums are optional, so using just IPv4 checksums would be sufficient here
                 -- UDP checksum offloading is comparatively slow: NICs typically do not support calculating the pseudo-header checksum so this is done in SW
@@ -136,4 +146,3 @@ function txSlave(queue, dstMac, pktLen)
                 queue:send(bufs)
         end
 end
-
