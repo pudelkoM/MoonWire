@@ -54,7 +54,7 @@
 	
 	=> Need for high throughput solutions
 	
-	Current state-of-the-art: $\ll$10 Gbit/s~\footnote{64 KB packets, no packet loss, hardware accelerated ciphers only}
+	%Current state-of-the-art: $\ll$10 Gbit/s~\footnote{64 KB packets, no packet loss, hardware accelerated ciphers only}
 \end{frame}
 
 \begin{frame}{Focus: Site-to-Site VPN}
@@ -67,8 +67,8 @@
 	
 	%Focus on Site-to-Site setups:
 	\begin{itemize}
-		\item Only two (or similar few) endpoints serving many hosts
-		\item Very high bandwidth between them
+		\item Only two (or similar few) endpoints connecting many hosts
+		\item Very high bandwidth between the gateways
 	\end{itemize}
 \end{frame}
 
@@ -81,19 +81,108 @@
 	\end{itemize}
 \end{frame}
 
-\section{Overview of Existing Implementations}
-\begin{frame}{Overview of Existing Implementations}
-	\begin{itemize}
-		\item OpenVPN
-		\item IPsec
-		\item WireGuard
-	\end{itemize}
+\section{Overview of Common Implementations}
+\begin{frame}{Overview of Common Implementations}
+	\begin{columns}[T] % align columns
+		\begin{column}{.30\textwidth}
+			\textbf{OpenVPN}
+			\begin{itemize}
+				\item Pure Userspace\\
+					Sockets
+				\item TLS \& X.509
+				\item L2 and L3
+				\item Platform independent
+			\end{itemize}
+		\end{column}%
+		\hfill%
+		\begin{column}{.32\textwidth}
+			\textbf{IPsec} (on Linux)
+			\begin{itemize}
+				\item Very complex\\
+				protocol \& code
+				\item Build into Kernel
+				\item L3 only (without L2TP)
+			\end{itemize}
+		\end{column}%
+		\hfill%
+		\begin{column}{.35\textwidth}
+			\textbf{WireGuard}
+			\begin{itemize}
+				\item Very new with\\ radical approaches
+				\item State-of-the-Art cryptography
+				\item Kernel module\\(inclusion ongoing)
+				\item L3 only
+			\end{itemize}
+		\end{column}%
+	\end{columns}
 
-	Problems with them: Very slow under high load
+	\pause
+	\vspace*{0.5em}
+	\textbf{Shared problem}:
+	
+	Different degrees of slow under high load and in general
+	
+	No implementation achieves >5 Mpps or >10 Gbit/s\footnote{64 byte packets, COTS hardware}
+	%TODO: comparison graph
+\end{frame}
+
+\begin{frame}{WireGuard under Load}
+
+\end{frame}
+
+\begin{frame}{Benchmarking: Traffic Shapes}
+Exact traffic pattern and distributions vary depending on setup/use-case.
+\textbf{Influences performance}.
+
+Common metric is \textbf{number of flows}. Identifies a group of packets to a connection/subnet/host. Usually 3-tuple (L2 proto, L3 src, L3 dst) or 5-tuple (+ L4 ports).
+
+\textbf{Packets-per-second} (Mpps) is more interesting than \textbf{bits-per-second} (Gbit/s). 64 byte packets (minimum Ethernet frame size), but more realistic distributions are possible.
+
+\vspace*{-0.5em}
+\begin{itemize}
+	\item Single flow, high bandwidth
+	
+	Worst case, models single client-server setup
+	
+	\item Multiple flows, equal bandwidth
+	
+	Best case, fits site-to-site setups, easy to model
+	
+	\item "Elephant" flows (few number of flows dominate bandwidth-wise)
+		
+	Realistic case (Netflix, Youtube, ...)
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Example: Underutilization with single flows}
+\begin{figure}
+	%\centering
+	%\hspace*{10em}
+	\includegraphics[width=0.9\linewidth]{figures/wireguard-encrypt-64-single-flow}
+	%\vspace*{-0.8em}
+	\caption{WireGuard forwarding rate of 64 byte packets, single flow, X540-AT2}
+	\label{fig:wireguard-encrypt-64-single-flow}
+\end{figure}
+
+
 \end{frame}
 
 \begin{frame}
-	\[ Insert graphs here \]
+\begin{figure}
+	%\centering
+	%	\hspace*{-10em}
+	\includegraphics[width=0.9\linewidth]{figures/queues_util_single_flow}
+
+	\caption{CPU/Queues utilization under single flow traffic}
+	\label{fig:queuesutilsingleflow}
+\end{figure}
+
+\vspace*{-1em}
+\begin{itemize}
+	\item NIC distributes packets to queues by L3 addresses
+	\item One flow => everything in one queue
+	\item Can be configured to include ports, not every NIC supports this
+\end{itemize}
 \end{frame}
 
 \section{Improvements with MoonWire}
@@ -101,40 +190,65 @@
 	\begin{itemize}
 		\item DPDK network stack to bypass slow kernel
 		\item Lua for fast prototyping and interfacing with libraries (crypto)
+		\item Aims for protocol compatibility with WireGuard
+		\item Allows experimenting with different data structures, algorithms, ...
 	\end{itemize}
 \end{frame}
 
 \begin{frame}{MoonWire Graphs}
-	 
+	 %todo
 	 [bytes/cycle graph of different ciphers]
-	
-	=> Cryptographic operations can become the bottleneck
 
-	Hard to improve, correctness is more important
+	\begin{itemize}
+		\item Cryptographic operations can become the bottleneck
+		\item Hard to improve, correctness is more important
+	\end{itemize}
 	
-	Solution: work distribution to multiple cores
+	\textbf{Solution:} work distribution to multiple cores
+	\begin{itemize}
+		\item WireGuard utilizes Kernel worker tasks and a queue		
+		\item Lots of possible implementations
+	\end{itemize}
 	
-	WireGuard does this with Kernel worker tasks and a queue
-	
-	Lots of possible implementations
 \end{frame}
 
 \section{Case Study: Nonces in Symmetric Encryption}
 \begin{frame}{Symmetric Encryption in a Nutshell}
-	enc(Shared key + Nonce) = Encrypted message
+	\texttt{encrypt(shared\_key, nonce, message) = ciphertext}
 	
-	Correct nonce generation/handling is critical. Nonce reuse (under the same key) means K.O.
+
+	\only<1>{
+		\vspace*{1em}
+		\begin{center}
+			Should be easy to scale up?
+		\end{center}
+	}
+	\pause
 	
-	Nonce generation depends on size. IETF ChaCha20 nonce is 96 bit (10 byte). 
-	Too short to be randomly generated (birthday problem) => recommendation: counter++. Must be global over all threads/cores. Accessed for each packet => highly critical. Synchronization (mutex) and atomics are far too slow.
+	\begin{itemize}
+		\item Correct nonce generation/handling is critical. Nonce reuse (under the same key) breaks scheme and allows key recovery
+		\item Nonce generation depends on length
+			 
+			 IETF ChaCha20 \& AES256 GCM: 96 bit (12 byte)
+			 
+			 Too short to be random (birthday problem)
+			 
+			 Recommendation: Counting up
+			 
+		\item Regular re-keying still recommended
+	\end{itemize}
 	
-	[Timing graphs for atomics/mutex vs. mpps]
+	But: Must be global over all threads/cores. Accessed for each packet => highly critical. Synchronization (mutex) and atomics are far too slow.
+	
+	%[Timing graphs for atomics/mutex vs. mpps]
 \end{frame}
 
 \begin{frame}{Nonce Generation Tricks}
 
 	\begin{itemize}
-		\item Partition nonce space per worker: 8 bit worker\_id + 94 bit counter = 96 bit
+		\item Partition nonce space per worker/CPU/thread: 
+		
+		8 bit worker\_id + 94 bit counter = 96 bit
 		
 		Worker$_{0}$: \textbf{0}123, \textbf{0}124, \textbf{0}125, ...
 		
@@ -144,7 +258,11 @@
 		
 		\item Different cipher: XChaCha20 has 192 bit (24 byte) nonce
 		
-		Can be randomly generated safely. Each worker has own PRNG instance (seeded carefully) => Independent state, no sharing => fast
+		Can be randomly generated safely
+		
+		Each worker has own PRNG instance (seeded carefully)
+		
+		Independent state \& no sharing => fast
 		
 		Trade-off: messages get larger (by 10 bytes), incompatible with existing protocol
 	\end{itemize}
@@ -154,7 +272,7 @@
 \end{frame}
 
 \begin{frame}{Multi-core Scaling Opportunities}
-	
+	%TODO
 	Source IP \& port identical over all packets => Simple RSS does not work
 	
 	
