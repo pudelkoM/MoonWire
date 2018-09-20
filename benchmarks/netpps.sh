@@ -37,8 +37,8 @@ do
                 T1="${ifs["$if"_tx]}"
                 R2=`cat /sys/class/net/"$if"/statistics/rx_packets`
                 T2=`cat /sys/class/net/"$if"/statistics/tx_packets`
-                TXMPPS=`echo "scale=2; ($T2 - $T1) / 1000000" | bc`
-                RXMPPS=`echo "scale=2; ($R2 - $R1) / 1000000" | bc`
+                TXMPPS=`echo "scale=3; ($T2 - $T1) / 1000000" | bc`
+                RXMPPS=`echo "scale=3; ($R2 - $R1) / 1000000" | bc`
                 echo "$(date -Iseconds), $if, $RXMPPS, $TXMPPS"
                 ifs["$if"_rx]=$R2
                 ifs["$if"_tx]=$T2
