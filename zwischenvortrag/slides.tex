@@ -92,6 +92,7 @@
 				\item TLS \& X.509
 				\item L2 and L3
 				\item Platform independent
+				\item Single-threaded
 			\end{itemize}
 		\end{column}%
 		\hfill%
@@ -122,11 +123,21 @@
 	
 	Different degrees of slow under high load and in general
 	
-	No implementation achieves >5 Mpps or >10 Gbit/s\footnote{64 byte packets, COTS hardware}
+	%No implementation achieves >5 Mpps or >10 Gbit/s\footnote{64 byte packets, COTS hardware}
 	%TODO: comparison graph
+	
+	OpenVPN, TUN, UDP, AES-256-CBC: \textbf{0.06 - 0.14 Mpps}
+	
+	IPsec, AES-GCM, 12 cores, 100\% Load: \textbf{2.45 Mpps}
 \end{frame}
 
 \begin{frame}{WireGuard under Load}
+\begin{figure}
+	\centering
+	\includegraphics[width=0.9\linewidth]{figures/wg-old-version-encrypt-64}
+	\caption{WireGuard v0.0.20180625 dropping packets under load}
+	\label{fig:wg-old-version-encrypt-64}
+\end{figure}
 
 \end{frame}
 
@@ -195,19 +206,26 @@ Common metric is \textbf{number of flows}. Identifies a group of packets to a co
 	\end{itemize}
 \end{frame}
 
-\begin{frame}{MoonWire Graphs}
+\begin{frame}{MoonWire}
 	 %todo
-	 [bytes/cycle graph of different ciphers]
+	 %[bytes/cycle graph of different ciphers]
 
 	\begin{itemize}
+		\item Ideally load is 100\% encryption, real world 0\% - 75\%
 		\item Cryptographic operations can become the bottleneck
 		\item Hard to improve, correctness is more important
 	\end{itemize}
 	
-	\textbf{Solution:} work distribution to multiple cores
+	\textbf{Solution:} distribute work to multiple cores
 	\begin{itemize}
 		\item WireGuard utilizes Kernel worker tasks and a queue		
 		\item Lots of possible implementations
+		
+		Naive MoonWire version with per worker queues:
+		
+		 Distributor: $\approx$8 Mpps
+		 
+		 Worker: $\approx$1.5 Mpps per core
 	\end{itemize}
 	
 \end{frame}
@@ -271,12 +289,12 @@ Common metric is \textbf{number of flows}. Identifies a group of packets to a co
 	Good news: Decryption is much easier. Message contains everything.
 \end{frame}
 
-\begin{frame}{Multi-core Scaling Opportunities}
-	%TODO
-	Source IP \& port identical over all packets => Simple RSS does not work
-	
-	
-\end{frame}
+%\begin{frame}{Multi-core Scaling Opportunities}
+%	%TODO
+%	Source IP \& port identical over all packets => Simple RSS does not work
+%	
+%	
+%\end{frame}
 
 \begin{frame}{Remaining Work}
 	\begin{itemize}
