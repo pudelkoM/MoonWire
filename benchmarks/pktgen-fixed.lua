@@ -16,6 +16,8 @@ local SRC_PORT      = 1000
 local DST_PORT      = 8000
 local NUM_FLOWS     = 128
 
+local jit = require "jit"
+jit.opt.start("maxrecord=20000", "maxirconst=20000", "loopunroll=4000")
 
 -- the configure function is called on startup with a pre-initialized command line parser
 function configure(parser)
@@ -94,15 +96,15 @@ function txSlave(queue, args)
 
         local function varyL3(pkt)
                 pkt.udp:setSrcPort(SRC_PORT + math.random(0, sqrtFlows - 1))
-                pkt.udp:setDstPort(SRC_PORT + math.random(0, sqrtFlows - 1))
+                pkt.udp:setDstPort(DST_PORT + math.random(0, sqrtFlows - 1))
         end
 
         local modFn
         if args.vary == "L2" then
                 modFn = varyL2
-        else if args.vary == "L2+L3" then
+        elseif args.vary == "L2+L3" then
                 modFn = function(pkt) varyL2(pkt); varyL3(pkt) end
-        else if args.vary == "L3" then
+        elseif args.vary == "L3" then
                 modFn = varyL3
         else
                 modFn = function() end
