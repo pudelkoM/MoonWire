@@ -1,0 +1,13 @@
+diff --git a/src/mpmc_ptr_ring.h b/src/mpmc_ptr_ring.h
+index da9393e..e035b9e 100644
+--- a/src/mpmc_ptr_ring.h
++++ b/src/mpmc_ptr_ring.h
+@@ -44,7 +44,7 @@
+ #include <linux/compiler.h>
+ #include <linux/errno.h>
+ #include <linux/log2.h>
+-#include <linux/processor.h>
++// #include <linux/processor.h>
+ #include <linux/slab.h>
+ #include <linux/stddef.h>
+
