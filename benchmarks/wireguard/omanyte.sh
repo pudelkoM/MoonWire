@@ -49,8 +49,7 @@ ip l set up dev wg0
 
 
 # Sending side
-
-# git clone https://github.com/libmoon/libmoon.git
-# cd libmoon
-# ./build.sh
-# ./setup-hugetlbfs.sh
+pushd ~/MoonWire/libmoon
+./build.sh
+./setup-hugetlbfs.sh
+popd
