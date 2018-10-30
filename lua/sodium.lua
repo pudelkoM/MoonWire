@@ -36,7 +36,30 @@ ffi.cdef[[
                                               unsigned long long adlen,
                                               const unsigned char *npub,
                                               const unsigned char *k);
+    
+    int sodium_runtime_has_sse2(void);
+    int sodium_runtime_has_sse3(void);
+    int sodium_runtime_has_ssse3(void);
+    int sodium_runtime_has_sse41(void);
+    int sodium_runtime_has_avx(void);
+    int sodium_runtime_has_avx2(void);
+    int sodium_runtime_has_avx512f(void);
+    int sodium_runtime_has_aesni(void);
 ]]
+
+local log = require "log"
+function module.log_CPU_features()
+    log:info(string.format("libsodium: SSE2 %u, SSE3 %u, SSSE3 %u, SSE41 %u, AVX %u, AVX2 %u, AVX512f %u, AES-NI %u", 
+        sodiumlib.sodium_runtime_has_sse2(),
+        sodiumlib.sodium_runtime_has_sse3(),
+        sodiumlib.sodium_runtime_has_ssse3(),
+        sodiumlib.sodium_runtime_has_sse41(),
+        sodiumlib.sodium_runtime_has_avx(),
+        sodiumlib.sodium_runtime_has_avx2(),
+        sodiumlib.sodium_runtime_has_avx512f(),
+        sodiumlib.sodium_runtime_has_aesni()
+    ))
+end
 
 function module.sodium_init()
     return sodiumlib.sodium_init()

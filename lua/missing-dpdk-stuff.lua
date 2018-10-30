@@ -9,6 +9,15 @@ ffi.cdef[[
     char *rte_pktmbuf_append_export(struct rte_mbuf *m, uint16_t len);
     char *rte_pktmbuf_adj_export(struct rte_mbuf *m, uint16_t len);
     int rte_pktmbuf_trim_export(struct rte_mbuf *m, uint16_t len);
+
+    typedef struct rte_spinlock {
+        volatile int locked;
+    } rte_spinlock_t;
+    void rte_spinlock_init_export(rte_spinlock_t *sl);
+    void rte_spinlock_lock_export(rte_spinlock_t *sl);
+    void rte_spinlock_unlock_export(rte_spinlock_t *sl);
+    int rte_spinlock_trylock_export(rte_spinlock_t *sl);
+    int rte_spinlock_is_locked_export(rte_spinlock_t *sl);
 ]]
 
 return dpdk_export_lib
