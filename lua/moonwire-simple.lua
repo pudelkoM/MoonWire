@@ -43,9 +43,8 @@ function master(args)
 
     stats.startStatsTask{devices = {args.gateway, args.tunnel}}
 
-    -- maybe use dpdk.startTaskOnCore
+    -- lm.startTaskOnCore(10, "slaveTaskEncrypt", args.gateway:getRxQueue(0), args.tunnel:getTxQueue(0))
     lm.startTask("slaveTaskEncrypt", args.gateway:getRxQueue(0), args.tunnel:getTxQueue(0))
-    --lm.startTask("slaveTaskDecrypt", args.gateway:getTxQueue(0), args.tunnel:getRxQueue(0))
 
     lm.waitForTasks()
     log:info("[master]: Shutdown")
@@ -55,8 +54,7 @@ function slaveTaskEncrypt(gwDevQueue, tunDevQueue)
     local dstMac = ffi.new("union mac_address"); dstMac:setString(DSTMAC)
     local srcMac = tunDevQueue.dev:getMac()
     local outerSrcIP = ffi.new("union ip4_address"); outerSrcIP:setString("10.1.0.1")
-    local outerDstIP = ffi.new("union ip4_address"); outerDstIP:setString("10.2.0.2")
-    local srcPort, dstPort = 2000, 3000
+    local srcPort = 2000
 
     if sodium.sodium_init() < 0 then
         log:error("Setting up libsodium")
@@ -66,6 +64,7 @@ function slaveTaskEncrypt(gwDevQueue, tunDevQueue)
     sodium.log_CPU_features()
 
     local peer = peerLib.newPeer()
+    log:info("sizeof(peer): " .. ffi.sizeof(peer))
 
     require("jit.p").start("a")
     local bufs = memory.bufArray()
@@ -101,13 +100,13 @@ function slaveTaskEncrypt(gwDevQueue, tunDevQueue)
             pkt.ip4:setProtocol(ip4.PROTO_UDP)
             pkt.ip4:setChecksum()
             pkt.ip4.src.uint32 = outerSrcIP.uint32
-            pkt.ip4.dst.uint32 = outerDstIP.uint32
+            pkt.ip4.dst.uint32 = peer.endpoint.uint32
 
             pkt.udp:fill{
                 udpSrc = srcPort,
-                udpDst = dstPort,
+                udpDst = peer.endpoint_port,
                 udpLength = buf:getSize() - 14 - 20,
-                udpChecksum = 0x0 -- disable checksumming since we have crypto authentication
+                udpChecksum = 0x0 -- disable checksumming since we have crypto integerty protection
             }
             
             -- debug: transformed packet
@@ -121,54 +120,5 @@ function slaveTaskEncrypt(gwDevQueue, tunDevQueue)
         tunDevQueue:sendN(bufs, rx)
     end
     require("jit.p").stop()
-
-end
-
-function slaveTaskDecrypt(gwDevQueue, tunDevQueue)
-    local srcPort, dstPort = 2000, 3000
-    local outerDstIP = ffi.new("union ip4_address"):setString("10.0.0.1")
-    local srcMac = gwDevQueue:getMacAddr()
-
-    if sodium.sodium_init() < 0 then
-        log:error("Setting up libsodium")
-        lm.stop()
-    end
-    
-    local key, _ = handshake()
-    local nonce = ffi.new("uint8_t[?]", sodium.crypto_aead_chacha20poly1305_IETF_NPUBBYTES)
-    
-    local bufs = memory.bufArray()
-
-    -- Array holding bufs that should be forwarded
-    local txBufs = memory.bufArray()
-
-    local appendBuf = function(array, buf)
-        array:resize(array.size + 1)
-        array[array.size - 1] = buf
-    end
-
-    while lm.running() do
-        local rx = tunDevQueue:tryRecv(bufs, 1000)
-        txBufs:resize(0)
-        for i = 1, rx do
-            local buf = bufs[i]
-            
-            local err = msg.decrypt(buf, key, nonce)
-            if err == nil then
-                -- Emplace new ethernet header
-                local ethpkt = buf:getEthPacket()
-                ethpkt.eth:setType(eth.TYPE_IP)
-                ethpkt.eth.dst:set(0x010203040506ull)
-                ethpkt.eth.src:set(0x0a0b0c0d0e0full)
-                appendBuf(txBufs, buf)
-            else
-                log:error(err)
-                buf:free()
-            end
-
-            -- debug: decrypted packet
-            -- buf:getUdp4Packet():dump(72)
-        end
-        gwDevQueue:sendN(txBufs, txBufs.size)
-    end
+    log:info("[Worker task]: Shutdown")
 end

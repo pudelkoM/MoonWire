@@ -18,6 +18,10 @@ ffi.cdef[[
     void rte_spinlock_unlock_export(rte_spinlock_t *sl);
     int rte_spinlock_trylock_export(rte_spinlock_t *sl);
     int rte_spinlock_is_locked_export(rte_spinlock_t *sl);
+
+    int rte_mempool_get_bulk_export(struct rte_mempool *mp, void **obj_table, unsigned int n);
+    void rte_mempool_put_bulk_export(struct rte_mempool *mp, void *const *obj_table, unsigned int n);
+    void rte_mempool_put_export(struct rte_mempool *mp, void *obj);
 ]]
 
 return dpdk_export_lib

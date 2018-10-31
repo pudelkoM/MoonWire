@@ -22,6 +22,7 @@ function configure(parser)
     parser:argument("gateway", "Device to configure as gateway"):convert(tonumber)
     parser:argument("tunnel", "Device to use as tunnel"):convert(tonumber)
     parser:option("--threads", "Number of threads"):convert(tonumber):default(1)
+    parser:option("--lock", "Type of lock to use"):default("rte")
     local args = parser:parse()
     return args
 end
@@ -46,7 +47,8 @@ function master(args)
     stats.startStatsTask{devices = {args.gateway, args.tunnel}}
 
     -- local peer = peerLib.newPeer("pthreads")
-    local peer = peerLib.newPeer("rte")
+    local peer = peerLib.newPeer(args.lock)
+    log:info("sizeof(peer): " .. ffi.sizeof(peer))
 
     -- maybe use dpdk.startTaskOnCore
     for i=1, args.threads do
@@ -59,12 +61,12 @@ function master(args)
 end
 
 function slaveTaskEncrypt(gwDevQueue, tunDevQueue, peer)
-    print(peer)
+    local id = gwDevQueue.qid
+    local counter = stats:newManualRxCounter("Worker " .. id)
     local dstMac = ffi.new("union mac_address"); dstMac:setString(DSTMAC)
     local srcMac = tunDevQueue.dev:getMac()
     local outerSrcIP = ffi.new("union ip4_address"); outerSrcIP:setString("10.1.0.1")
-    local outerDstIP = ffi.new("union ip4_address"); outerDstIP:setString("10.2.0.2")
-    local srcPort, dstPort = 2000, 3000
+    local srcPort = 2000
 
     if sodium.sodium_init() < 0 then
         log:error("Setting up libsodium")
@@ -74,12 +76,13 @@ function slaveTaskEncrypt(gwDevQueue, tunDevQueue, peer)
     sodium.log_CPU_features()
 
     require("jit.p").start("a")
-    local bufs = memory.bufArray()
+    local bufs = memory.bufArray(63)
     while lm.running() do
         local rx = gwDevQueue:tryRecv(bufs, 1000)
         peer:lock()
         for i = 1, rx do
             local buf = bufs[i]
+            counter:update(1, buf:getSize())
 
             -- debug: verbatim packet
             -- buf:getIP4Packet():dump(72)
@@ -108,13 +111,13 @@ function slaveTaskEncrypt(gwDevQueue, tunDevQueue, peer)
             pkt.ip4:setProtocol(ip4.PROTO_UDP)
             pkt.ip4:setChecksum()
             pkt.ip4.src.uint32 = outerSrcIP.uint32
-            pkt.ip4.dst.uint32 = outerDstIP.uint32
+            pkt.ip4.dst.uint32 = peer.endpoint.uint32
 
             pkt.udp:fill{
                 udpSrc = srcPort,
-                udpDst = dstPort,
+                udpDst = peer.endpoint_port,
                 udpLength = buf:getSize() - 14 - 20,
-                udpChecksum = 0x0 -- disable checksumming since we have crypto authentication
+                udpChecksum = 0x0 -- disable checksumming since we have crypto integrety protection
             }
             
             -- debug: transformed packet
@@ -129,5 +132,5 @@ function slaveTaskEncrypt(gwDevQueue, tunDevQueue, peer)
         tunDevQueue:sendN(bufs, rx)
     end
     require("jit.p").stop()
-
+    log:info("[Worker " .. id .. "]: Shutdown")
 end
