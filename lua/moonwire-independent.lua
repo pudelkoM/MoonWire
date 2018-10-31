@@ -46,7 +46,6 @@ function master(args)
 
     stats.startStatsTask{devices = {args.gateway, args.tunnel}}
 
-    -- local peer = peerLib.newPeer("pthreads")
     local peer = peerLib.newPeer(args.lock)
     log:info("sizeof(peer): " .. ffi.sizeof(peer))
 
@@ -91,6 +90,7 @@ function slaveTaskEncrypt(gwDevQueue, tunDevQueue, peer)
             local err = msg.encrypt(buf, peer.txKey, peer.nonce, peer.id)
             if err then
                 log:error("Failed to encrypt:" .. err)
+                lm.stop()
                 goto skip
             end
 
