@@ -75,7 +75,7 @@ function slaveTaskEncrypt(gwDevQueue, tunDevQueue, peer)
     log:info("sodium init done")
     sodium.log_CPU_features()
 
-    require("jit.p").start("a")
+    -- require("jit.p").start("a")
     local bufs = memory.bufArray(63)
     while lm.running() do
         local rx = gwDevQueue:tryRecv(bufs, 1000)

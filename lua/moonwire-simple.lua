@@ -66,7 +66,7 @@ function slaveTaskEncrypt(gwDevQueue, tunDevQueue)
     local peer = peerLib.newPeer()
     log:info("sizeof(peer): " .. ffi.sizeof(peer))
 
-    require("jit.p").start("a")
+    -- require("jit.p").start("a")
     local bufs = memory.bufArray()
     while lm.running() do
         local rx = gwDevQueue:tryRecv(bufs, 1000)
