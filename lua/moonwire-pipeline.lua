@@ -60,12 +60,7 @@ function master(args)
 
     local rings = {} -- create one SPSC ring for each worker
     for i=1, args.workers do
-        table.insert(rings, pipe.newPacketRing(2^10 - 1))
-        -- lm.startTask("worker", rings[i], args.tunnel:getTxQueue(i - 1))
-        -- print("created worker", i, rings[i])
-    end
-    
-    for i=1, args.workers do
+        table.insert(rings, pipe.newPacketRing(2^8 - 1))
         lm.startTask("worker", rings[i], args.tunnel:getTxQueue(i - 1))
         print("[master]: created worker", i, rings[i])
     end
@@ -180,18 +175,19 @@ function slaveTaskRx(gwDevQueue, rings)
             local work = ffi.cast("struct work*", work)
             work.pool = pool
             work.peer = peer
-        end
+        end,
+        bit.band(mempool.MEMPOOL_F_SC_GET, mempool.MEMPOOL_F_NO_PHYS_CONTIG)
     )
     
     local nextRing = 1
     local numRings = #rings
-    local batchSize = 255
+    local batchSize = 127
     local bufs = memory.bufArray(batchSize)
     local work_bufs = mp:bufArray(batchSize)
 
     -- require("jit.p").start("a")
     while lm.running() do
-        local rx = gwDevQueue:tryRecv(bufs, 1000 * 1000)    
+        local rx = gwDevQueue:tryRecv(bufs, 1000)
     
         if rx > 0 then
             -- create & attach crypto args

@@ -5,6 +5,8 @@ local dpdk_export = require "missing-dpdk-stuff"
 
 local mod = {}
 
+mod.MEMPOOL_F_SP_PUT = 0x0004
+mod.MEMPOOL_F_SC_GET = 0x0008
 mod.MEMPOOL_F_NO_PHYS_CONTIG = 0x0020
 
 ffi.cdef[[
@@ -25,8 +27,9 @@ unsigned 	flags
 );
 ]]
 
-function mod.createMempool(n, elt_size, socket_id, fn)
-    local pool = ffi.C.rte_mempool_create("", n, elt_size, 0, 0, nil, nil, nil, nil, socket_id, mod.MEMPOOL_F_NO_PHYS_CONTIG)
+function mod.createMempool(n, elt_size, socket_id, fn, flags)
+    local flags = flags or mod.MEMPOOL_F_NO_PHYS_CONTIG
+    local pool = ffi.C.rte_mempool_create("", n, elt_size, 0, 0, nil, nil, nil, nil, socket_id, flags)
     
     if fn then
         bufs = pool:bufArray(n)
