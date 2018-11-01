@@ -10,7 +10,7 @@ local peerDef_no_lock = "struct peer_no_lock { \
     uint32_t id; \
     union ip4_address endpoint; \
     uint16_t endpoint_port; \
-};"
+} __attribute__((aligned(64)));"
 
 local peerDef_pthreads = "struct peer_pthreads { \
     uint8_t rxKey[" .. tonumber(sodium.crypto_aead_chacha20poly1305_IETF_KEYBYTES) .. "]; \
@@ -20,7 +20,7 @@ local peerDef_pthreads = "struct peer_pthreads { \
     union ip4_address endpoint; \
     uint16_t endpoint_port; \
     struct lock* lock_; \
-};"
+} __attribute__((aligned(64)));"
 
 local peerDef_rte_spinlock = "struct peer_rte_spinlock { \
     uint8_t rxKey[" .. tonumber(sodium.crypto_aead_chacha20poly1305_IETF_KEYBYTES) .. "]; \
@@ -30,7 +30,7 @@ local peerDef_rte_spinlock = "struct peer_rte_spinlock { \
     union ip4_address endpoint; \
     uint16_t endpoint_port; \
     rte_spinlock_t lock_; \
-};"
+} __attribute__((aligned(64)));"
 
 ffi.cdef(peerDef_no_lock)
 ffi.cdef(peerDef_pthreads)

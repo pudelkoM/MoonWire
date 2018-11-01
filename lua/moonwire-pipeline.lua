@@ -60,13 +60,16 @@ function master(args)
 
     local rings = {} -- create one SPSC ring for each worker
     for i=1, args.workers do
-        table.insert(rings, pipe.newPacketRing(2^8 - 1))
+        table.insert(rings, pipe.newPacketRing(2^10 - 1))
         lm.startTask("worker", rings[i], args.tunnel:getTxQueue(i - 1))
         print("[master]: created worker", i, rings[i])
     end
     
-    lm.startTask("slaveTaskRx", args.gateway:getRxQueue(0), rings)
+    local rxToCopyRing = pipe.newPacketRing(2^8 - 1)
+    lm.startTask("slaveTaskRx", args.gateway:getRxQueue(0), rxToCopyRing)
     print("[master]: created slaveTaskRx")
+    lm.startTask("copyTask", rxToCopyRing, rings)
+    print("[master]: created copyTask")
     
     lm.waitForTasks()
     log:info("[master]: Shutdown")
@@ -150,12 +153,30 @@ end
 
 ffi.cdef[[
     struct work {
-        struct peer_no_lock peer;
+        struct peer_no_lock peer __attribute__((aligned(64)));
         struct rte_mempool* pool;
     };
 ]]
 
-function slaveTaskRx(gwDevQueue, rings)
+function slaveTaskRx(gwDevQueue, outputRing)
+    local batchSize = 31
+    local bufs = memory.bufArray(batchSize)
+    -- require("jit.p").start("a")
+    while lm.running() do
+        local rx = gwDevQueue:tryRecv(bufs, 1000)
+        if rx > 0 then
+            local suc = outputRing:sendN(bufs, rx)
+            if not suc then
+                bufs:free(rx)
+            end
+        end
+    end
+    require("jit.p").stop()
+    log:info("[rxSlave]: Shutdown")
+end
+
+
+function copyTask(inputRing, rings)
     local fastIndexWrap = function(n, mod)
         if n <= mod then
             return n
@@ -187,8 +208,8 @@ function slaveTaskRx(gwDevQueue, rings)
 
     -- require("jit.p").start("a")
     while lm.running() do
-        local rx = gwDevQueue:tryRecv(bufs, 1000)
-    
+        local rx = inputRing:recv(bufs)
+
         if rx > 0 then
             -- create & attach crypto args
             work_bufs:allocN(rx)
@@ -201,11 +222,11 @@ function slaveTaskRx(gwDevQueue, rings)
                 end
                 buf.udata64 = ffi.cast("uint64_t", args_buf)
                 args_buf.peer = peer
-                -- ffi.copy(args_buf:getBytes(), peer, ffi.sizeof(peer))
+                -- ffi.copy(args_buf.peer, peer, ffi.sizeof(peer))
                 sodium.sodium_increment(peer_nonce, sodium.crypto_aead_chacha20poly1305_IETF_NPUBBYTES)
             end
 
-            for tries = 1, numRings do
+            for tries = 1, 999999 do
                 local suc = rings[nextRing]:sendN(bufs, rx)
                 if suc then
                     goto done
@@ -226,5 +247,5 @@ function slaveTaskRx(gwDevQueue, rings)
         end
     end
     require("jit.p").stop()
-    log:info("[rxSlave]: Shutdown")
+    log:info("[copyTask]: Shutdown")
 end
