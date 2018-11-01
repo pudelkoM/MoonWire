@@ -176,7 +176,7 @@ function slaveTaskRx(gwDevQueue, rings)
             work.pool = pool
             work.peer = peer
         end,
-        bit.band(mempool.MEMPOOL_F_SC_GET, mempool.MEMPOOL_F_NO_PHYS_CONTIG)
+        bit.bor(mempool.MEMPOOL_F_SC_GET, mempool.MEMPOOL_F_NO_PHYS_CONTIG)
     )
     
     local nextRing = 1
