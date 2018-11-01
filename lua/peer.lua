@@ -79,11 +79,13 @@ function mod.newPeer(type, rxKey, txKey, nonce)
         obj = ffi.new("struct peer_no_lock", {
             id = peerCtr
         })
-    else
+    elseif type == "pthreads" then
         obj = ffi.new("struct peer_pthreads", {
             id = peerCtr,
             lock_ = lock:new()
         })
+    else
+        return nil
     end
     
     if nonce then
