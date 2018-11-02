@@ -74,11 +74,12 @@ function slaveTaskEncrypt(gwDevQueue, tunDevQueue, peer)
     log:info("sodium init done")
     sodium.log_CPU_features()
 
+    local tmp_peer = peerLib.newPeer("no_lock")
+
     -- require("jit.p").start("a")
     local bufs = memory.bufArray(63)
     while lm.running() do
         local rx = gwDevQueue:tryRecv(bufs, 1000)
-        peer:lock()
         for i = 1, rx do
             local buf = bufs[i]
             counter:update(1, buf:getSize())
@@ -86,8 +87,13 @@ function slaveTaskEncrypt(gwDevQueue, tunDevQueue, peer)
             -- debug: verbatim packet
             -- buf:getIP4Packet():dump(72)
             -- print("pre", buf.pkt_len, buf.data_len)
+            
+            peer:lock()
+            sodium.sodium_increment(peer.nonce, sodium.crypto_aead_chacha20poly1305_IETF_NPUBBYTES)
+            ffi.copy(tmp_peer, peer[0], ffi.sizeof(tmp_peer))
+            peer:unlock()
 
-            local err = msg.encrypt(buf, peer.txKey, peer.nonce, peer.id)
+            local err = msg.encrypt(buf, tmp_peer.txKey, tmp_peer.nonce, tmp_peer.id)
             if err then
                 log:error("Failed to encrypt:" .. err)
                 lm.stop()
@@ -111,11 +117,11 @@ function slaveTaskEncrypt(gwDevQueue, tunDevQueue, peer)
             pkt.ip4:setProtocol(ip4.PROTO_UDP)
             pkt.ip4:setChecksum()
             pkt.ip4.src.uint32 = outerSrcIP.uint32
-            pkt.ip4.dst.uint32 = peer.endpoint.uint32
+            pkt.ip4.dst.uint32 = tmp_peer.endpoint.uint32
 
             pkt.udp:fill{
                 udpSrc = srcPort,
-                udpDst = peer.endpoint_port,
+                udpDst = tmp_peer.endpoint_port,
                 udpLength = buf:getSize() - 14 - 20,
                 udpChecksum = 0x0 -- disable checksumming since we have crypto integrety protection
             }
@@ -128,7 +134,6 @@ function slaveTaskEncrypt(gwDevQueue, tunDevQueue, peer)
             
             ::skip::
         end
-        peer:unlock()
         tunDevQueue:sendN(bufs, rx)
     end
     require("jit.p").stop()
