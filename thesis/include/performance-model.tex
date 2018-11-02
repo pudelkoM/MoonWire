@@ -1,0 +1,62 @@
+\chapter{Performance Model for VPN Implementations}
+\label{chap:perf_model}
+This Chapter presents the developed performance model for VPN implementations. 
+
+Implementations are wildly different, but share some common functionality as part of their VPN operation. The following sections dissect and extract the core tasks of a VPN. For these core task I then define bounds that can be used to estimate performance numbers. These bounds are based on experimentation, benchmarks results and calculations.
+
+\section{Major Tasks}
+All VPNs are comprised of a number of task they complete to provide their functionality.
+
+\subsection{Network Driver \& Stack}
+Before a packet reaches the VPN code, buffers have to be allocated, data has to be received and fields have to be validated. The same goes for the send path, where the packet passes through multiple layers until it is delivered over the wire.
+
+While a VPN implementation usually has no influence over the decision which network stack is used, a major chunk of the systems performance is decided at this low level.
+If the NIC driver is slow or inefficient, then the upper application can do very little to nothing to redeem this and still be fast.
+
+The severity of this can be illustrated by the following example calculation. For a given line rate of packets per second that have to be processed and a given CPU model and clock rate, concrete time budgets can be calculated for each packet. Table~\ref{tab:todo} shows such budgets for X Mpps and a modern Intel Xeon XXX cpu. It lists the average timings of network driver operations and data accesses to cache and memory. 
+
+[cycle budget per packet table]
+
+It can be seen that these costs are not to be neglected and can easily determine the systems overall performance.
+
+Since a packet has to be passed twice, receive and send path, through this stack, we can establish the following equation for this part of the performance model: 
+
+\begin{equation}\label{eq:cost}
+asd
+\end{equation}
+
+Figure X shows the correlation of processing time spend on rx/tx and the systems maximum forwarding rate.
+
+\begin{figure}[h]
+	\centering
+	\begin{tikzpicture}
+		\begin{axis}[
+			scale only axis,
+			height=4cm,
+			width=7cm,
+			]
+			\addplot[mark=none]{x^2};
+		\end{axis}
+	\end{tikzpicture}
+	\caption{heading}
+\end{figure}
+
+
+It is obvious that a VPN will not deliver packets faster than the underlying network stack allows. 
+Although optimizations like GRO can elevate the pressure to some degree.
+
+\subsection{Memory Management}
+\subsection{Cryptographic Operations}
+\subsection{Multicore Synchronization}
+\subsection{Data Structures}
+
+
+\section{Influencing Factors}
+	\subsection{Network Stack \& Drivers}
+	\subsection{Memory Management}
+	\subsection{Multi-core Scaling}
+	\subsection{Cryptographic Ciphers}
+	\subsection{Data Structures}
+		Queues
+		Routing
+		State Storage \& Lookup

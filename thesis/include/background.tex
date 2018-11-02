@@ -1,11 +1,43 @@
 \chapter{Technical Background}
 \label{chap:background}
 
-This Chapter introduces necessary concepts from the areas of cryptography and ...
+This Chapter explains in detail what a VPN is and introduces the necessary concepts from the areas cryptography, network cards and NIC drivers. Anomalies or oddities at higher layers often root in specific details of low level operations, therefore it is helpful to have a basic understanding of these concepts.
+
+\section{Virtual Private Networks}
+What does a VPN do?
+Connect clients as if they were on the same link/subnet. 
+[Image explaining this]
+
+How is this done?
+Encapsulation, header rewrites
+
+Technical details:
+Differences of L2 and L3 VPNs.
+
+Dis-/Advantages L2:
+- slower
+- L3 protos work
+- multicast
+
+Dis-/Advantages L3:
+- can be faster
+- L3 protos have to be wrapped
+- "cleaner"
+- Includes routing step, clients must be in different subnets
+
+Host VPN vs. Gateway VPN + Image
+Distinction software vs. hardware VPN, thesis limit to software on COTS-Hardware
+
+Extra features not covered:
+Stenography
+Firewalling
+DHCP
+Mirgration
+multipath stuff
 
 \section{Cryptography}
-
-VPNs are often used to hide data from unauthorized readers or manipulation. To reach this goal cryptography 
+While encryption is not strictly a technical necessity for VPN operation, all clients provide means to secure the packets. Since many usecases transmit private data over a insecure link, such as the public Internet, measures have to be taken to hide data from unauthorized readers or manipulation.
+Apart from unsound approaches like proprietary protocols that hide or scramble the data in supposedly secret ways, cryptography can be used to achieve different levels of information security. 
 
 \subsection{Key Concepts of Information Security}
 
@@ -17,18 +49,58 @@ VPNs are often used to hide data from unauthorized readers or manipulation. To r
 
 \subsubsection{Non-Repudiation}
 
-\subsection{Noise Protocol Framework}
-All these new ideas like from CRYPTO conferences and modern AEAD Ciphers like ChaCha-poly
+\subsection{Application in VPNs}
+Like in many other protocols such as HTTP over TLS, VPNs use a similiar suite of cryptographic tools, with the goal to create a secure channel between two actors.
 
-\section{Technology}
+0. Optional step: configuration. Set identities, PKIs and CAs, distribute configs
+
+1. Key exchange, asymmetric encryption, verify identities, configure settings, gather key material for next step.
+Ciphers: DH-RSA, ECC, DSA
+
+2. Secure bi-directional channel, symmetric crypto for speed reasons. AEAD
+Ciphers: AES, chacha20
+
+In Section~\ref{chap:evaluation} we deliver detailed performance numbers on modern CPUs for common ciphers used.
+
+%\subsection{Noise Protocol Framework}
+%All these new ideas like from CRYPTO conferences and modern AEAD Ciphers like ChaCha-poly
+
+\section{Other Technology}
 Present common technologies found in VPN software, CPUs. List state-of-the-art implementations.
-\subsection{CPU Extension: AES-NI \& Vector Instructions}
+\subsection{CPU Extensions: AES-NI \& Vector Instructions}
 
-\section{Protocols}
-\subsection{IPsec}
-\cite{ferguson1999cryptographic}
-\subsection{OpenVPN}
+\subsection{Network Card Drivers \& Network Stacks }
+Explain network drivers and stack. memory buffers, pools and rings.
 
-\subsection{WireGuard}
-\cite{donenfeld2017wireguard}
-\cite{dowling2018cryptographic}
+How does a NIC receive/send frames?
+RSS, packet distribution, hashing
+
+
+\subsubsection{Kernel-land}
+How does the Kernel do it
+Interrupts, 
+
+why does ipsec/wireguard run in kernel-space? performance, no copying of data.
+lack of fast, no-fuzz kernel to frames (XDP?)
+
+\subsubsection{Differences in User-space}
+Userspace drivers, why?
+security: many people are unhappy with crypto in kernel-space
+crypto is complex => bugs => exploits of whole box instead of just the VPN
+
+present and explain DPDK
+major differences
+run-to-completion model
+drawbacks of userspace drivers: no or minimal high-level (L3+) protocols, exclusive access to NIC
+Advantages: higher performance, can be shipped with the app, more secure, IOMMU
+
+
+
+%\section{Protocols}
+%\subsection{IPsec}
+%\cite{ferguson1999cryptographic}
+%\subsection{OpenVPN}
+%
+%\subsection{WireGuard}
+%\cite{donenfeld2017wireguard}
+%\cite{dowling2018cryptographic}
