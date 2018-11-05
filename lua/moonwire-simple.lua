@@ -63,7 +63,7 @@ function slaveTaskEncrypt(gwDevQueue, tunDevQueue)
     log:info("sodium init done")
     sodium.log_CPU_features()
 
-    local peer = peerLib.newPeer()
+    local peer = peerLib.newPeer("no_lock")
     log:info("sizeof(peer): " .. ffi.sizeof(peer))
 
     -- require("jit.p").start("a")
