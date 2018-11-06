@@ -36,7 +36,7 @@ function master(args)
         port = args.gateway,
         rxQueues = args.rxThreads,
         -- rssQueues = args.rxThreads
-        numBufs = args.workers * 2^11 - 1,
+        numBufs = math.min(args.workers * 2^12 - 1, 2^15),
         txQueues = 1,
     }
 
@@ -66,10 +66,10 @@ function master(args)
     end
     
     local rxToCopyRing = pipe.newPacketRing(2^8 - 1)
-    lm.startTask("slaveTaskRx", args.gateway:getRxQueue(0), rxToCopyRing)
-    print("[master]: created slaveTaskRx")
     lm.startTask("copyTask", rxToCopyRing, rings)
     print("[master]: created copyTask")
+    lm.startTask("slaveTaskRx", args.gateway:getRxQueue(0), rxToCopyRing)
+    print("[master]: created slaveTaskRx")
     
     lm.waitForTasks()
     log:info("[master]: Shutdown")
