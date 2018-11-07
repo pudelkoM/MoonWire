@@ -30,12 +30,10 @@ function configure(parser)
 end
 
 function master(args)
-    args.rxThreads = 1
-
     args.gateway = device.config{
         port = args.gateway,
-        rxQueues = args.rxThreads,
-        -- rssQueues = args.rxThreads
+        rxQueues = 1,
+        rssQueues = 1,
         numBufs = math.min(args.workers * 2^12 - 1, 2^15),
         txQueues = 1,
     }
