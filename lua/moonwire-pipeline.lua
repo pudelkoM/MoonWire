@@ -85,7 +85,9 @@ function worker(ring, txQueue)
     local outerSrcIP = ffi.new("union ip4_address"); outerSrcIP:setString("10.1.0.1")
     local srcPort = 2000
 
-    bufs = memory.bufArray(2^5 - 1)
+    batchSize = 2^5 - 1
+    bufs = memory.bufArray(batchSize)
+    work_bufs = ffi.new("struct work*[?]", batchSize)
 
     -- require("jit.p").start("a")
     while lm.running() do
@@ -102,7 +104,7 @@ function worker(ring, txQueue)
             local args_buf = ffi.cast("struct work*", buf.udata64)
             local peer = args_buf.peer
             local err = msg.encrypt(buf, peer.txKey, peer.nonce, peer.id)
-            dpdk_export.rte_mempool_put_export(args_buf.pool, args_buf)
+            work_bufs[i - 1] = args_buf
             if err then
                 log:error("Failed to encrypt:" .. err)
                 lm.stop()
@@ -143,6 +145,9 @@ function worker(ring, txQueue)
             ::skip::
         end
         txQueue:sendN(bufs, rx)
+        if rx > 0 then
+            dpdk_export.rte_mempool_put_bulk_export(work_bufs[0].pool, ffi.cast("void*const*", work_bufs), rx)
+        end
     end
     require("jit.p").stop()
     counter:finalize()
