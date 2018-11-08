@@ -4,13 +4,13 @@ local lock = require "lock"
 local dpdk_export = require "missing-dpdk-stuff"
 
 local peerDef_no_lock = "struct peer_no_lock { \
-    uint8_t rxKey[" .. tonumber(sodium.crypto_aead_chacha20poly1305_IETF_KEYBYTES) .. "]; \
-    uint8_t txKey[" .. tonumber(sodium.crypto_aead_chacha20poly1305_IETF_KEYBYTES) .. "]; \
     uint8_t nonce[" .. tonumber(sodium.crypto_aead_chacha20poly1305_IETF_NPUBBYTES) .. "]; \
     uint32_t id; \
     union ip4_address endpoint; \
     uint16_t endpoint_port; \
-} __attribute__((aligned(64)));"
+    uint8_t txKey[" .. tonumber(sodium.crypto_aead_chacha20poly1305_IETF_KEYBYTES) .. "]; \
+    uint8_t rxKey[" .. tonumber(sodium.crypto_aead_chacha20poly1305_IETF_KEYBYTES) .. "]; \
+};"
 
 local peerDef_pthreads = "struct peer_pthreads { \
     uint8_t rxKey[" .. tonumber(sodium.crypto_aead_chacha20poly1305_IETF_KEYBYTES) .. "]; \

@@ -156,7 +156,7 @@ end
 
 ffi.cdef[[
     struct work {
-        struct peer_no_lock peer __attribute__((aligned(64)));
+        struct peer_no_lock peer;
         struct rte_mempool* pool;
     };
 ]]
