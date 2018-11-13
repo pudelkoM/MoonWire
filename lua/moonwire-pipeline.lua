@@ -234,24 +234,19 @@ function copyTask(inputRing, rings)
                 sodium.sodium_increment(peer_nonce, sodium.crypto_aead_chacha20poly1305_IETF_NPUBBYTES)
             end
 
-            for tries = 1, 999999 do
+            for tries = 1, 1024 do
                 local suc = rings[nextRing]:sendN(bufs, rx)
+                nextRing = fastIndexWrap(nextRing + 1, numRings)
                 if suc then
                     goto done
                 else
-                    nextRing = fastIndexWrap(nextRing + 1, numRings)
+                    lm.sleepMicros(1) -- TODO: only wait after all rings failed once
                 end
             end
             bufs:free(rx)
             work_bufs:free(rx)
+            log:warn("all workers unresponsive")
             ::done::
-
-            -- local suc = rings[nextRing]:sendN(bufs, rx)
-            -- if not suc then
-            --     bufs:free(rx)
-            --     work_bufs:free(rx)
-            -- end
-            -- nextRing = fastIndexWrap(nextRing + 1, numRings)
         end
     end
     require("jit.p").stop()
