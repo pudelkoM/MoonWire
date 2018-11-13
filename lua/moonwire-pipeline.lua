@@ -165,9 +165,9 @@ function slaveTaskRx(gwDevQueue, outputRing)
     local batchSize = 31
     local bufs = memory.bufArray(batchSize)
     -- require("jit.p").start("a")
-    fails = 0
+    local fails = 0
     while lm.running() do
-        local rx = gwDevQueue:tryRecv(bufs, 1000)
+        local rx = gwDevQueue:tryRecv(bufs, 1000 * 1000) -- 1 ms
         if rx > 0 then
             local suc = outputRing:sendN(bufs, rx)
             if not suc then
